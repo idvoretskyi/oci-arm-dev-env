@@ -66,15 +66,21 @@ variable "instance_memory_in_gbs" {
 }
 
 variable "k3d_nodes" {
-  description = "Number of K3d nodes to create (masters + workers)"
+  description = "Total number of K3d nodes (masters + workers)"
+  type        = number
+  default     = 6
+}
+
+variable "k3d_masters" {
+  description = "Number of K3d master nodes (HA - should be odd number)"
   type        = number
   default     = 3
 }
 
-variable "k3d_masters" {
-  description = "Number of K3d master nodes"
+variable "k3d_workers" {
+  description = "Number of K3d worker nodes (HA)"
   type        = number
-  default     = 1
+  default     = 3
 }
 
 variable "boot_volume_size_in_gbs" {

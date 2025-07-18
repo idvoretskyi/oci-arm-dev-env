@@ -1,36 +1,45 @@
-output "master_public_ips" {
-  description = "Public IP addresses of K3s master nodes"
-  value       = oci_core_instance.k3s_master[*].public_ip
+output "k3d_vm_public_ip" {
+  description = "Public IP address of K3d HA cluster VM"
+  value       = oci_core_instance.k3d_vm.public_ip
 }
 
-output "master_private_ips" {
-  description = "Private IP addresses of K3s master nodes"
-  value       = oci_core_instance.k3s_master[*].private_ip
+output "k3d_vm_private_ip" {
+  description = "Private IP address of K3d HA cluster VM"
+  value       = oci_core_instance.k3d_vm.private_ip
 }
 
-output "worker_public_ips" {
-  description = "Public IP addresses of K3s worker nodes"
-  value       = oci_core_instance.k3s_worker[*].public_ip
-}
-
-output "worker_private_ips" {
-  description = "Private IP addresses of K3s worker nodes"
-  value       = oci_core_instance.k3s_worker[*].private_ip
-}
-
-output "ssh_command_master" {
-  description = "SSH command to connect to the master node"
-  value       = "ssh ${var.vm_username}@${oci_core_instance.k3s_master[0].public_ip}"
+output "ssh_command" {
+  description = "SSH command to connect to the K3d VM"
+  value       = "ssh ${var.vm_username}@${oci_core_instance.k3d_vm.public_ip}"
 }
 
 output "kubeconfig_command" {
-  description = "Command to get kubeconfig from master node"
-  value       = "scp ${var.vm_username}@${oci_core_instance.k3s_master[0].public_ip}:~/.kube/config ~/.kube/config-oci"
+  description = "Command to get kubeconfig from K3d VM"
+  value       = "scp ${var.vm_username}@${oci_core_instance.k3d_vm.public_ip}:~/.kube/config ~/.kube/config-oci"
 }
 
-output "k3s_api_endpoint" {
-  description = "K3s API server endpoint"
-  value       = "https://${oci_core_instance.k3s_master[0].public_ip}:6443"
+output "k3d_cluster_info" {
+  description = "K3d cluster configuration"
+  value = {
+    masters = var.k3d_masters
+    workers = var.k3d_workers
+    total_nodes = var.k3d_nodes
+    cluster_name = "k3s-ha-cluster"
+  }
+}
+
+output "k3d_api_endpoint" {
+  description = "K3d API server endpoint"
+  value       = "https://${oci_core_instance.k3d_vm.public_ip}:6443"
+}
+
+output "code_server_access" {
+  description = "Code-server access URLs"
+  value = {
+    port_forward = "kubectl port-forward -n code-server svc/code-server-service 8080:8080"
+    local_url = "http://localhost:8080"
+    ingress_url = "http://${oci_core_instance.k3d_vm.public_ip}:8080"
+  }
 }
 
 output "vcn_id" {
