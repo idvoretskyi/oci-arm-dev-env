@@ -1,0 +1,97 @@
+# Terraform files
+terraform.tfstate
+terraform.tfstate.backup
+terraform.tfvars
+.terraform/
+.terraform.lock.hcl
+*.tfplan
+
+# OCI configuration
+.oci/
+config
+
+# SSH keys
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+id_ecdsa*
+*.pub
+
+# Kubernetes configuration
+kubeconfig
+config-oci
+*.kubeconfig
+
+# Helm
+helm-debug.log
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.development
+
+# Logs
+*.log
+logs/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Claude AI files
+CLAUDE.md
+.claude_session
+.claude_history
+claude_*.log
+.claude_cache/
+claude_workspace/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
+*.tmp
+
+# Secrets and credentials
+secrets/
+credentials/
+certs/
+*.crt
+*.csr
+
+# Local development
+local/
+tmp/
+temp/
+
+# Node modules (if any)
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+
+# Custom values files (may contain sensitive data)
+values-*.yaml
+*-values.yaml
+values.local.yaml

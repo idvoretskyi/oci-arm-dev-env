@@ -1,0 +1,49 @@
+# Repository settings for oci-code-server-arm
+
+repository:
+  description: "Deploy and manage code-server (VS Code in the browser) on Oracle Cloud Infrastructure ARM instances using K3d and Terraform."
+  has_issues: true
+  has_projects: true
+  has_wiki: false
+  default_branch: main
+  # Enable CodeQL code scanning
+  code_scanning:
+    tools:
+      - name: CodeQL
+        enabled: true
+        languages: [ 'javascript', 'python', 'shell' ]
+        on:
+          push: true
+          pull_request: true
+      - name: Trivy
+        enabled: true
+        types: [ 'terraform', 'docker', 'kubernetes', 'secrets', 'config' ]
+        on:
+          push: true
+          pull_request: true
+  # Automatically assign issues and PRs to CODEOWNER
+  assignees:
+    issues:
+      - idvoretskyi
+    pull_requests:
+      - idvoretskyi
+
+branches:
+  - name: main
+    protection:
+      required_pull_request_reviews:
+        required_approving_review_count: 1
+        dismiss_stale_reviews: true
+        require_code_owner_reviews: true
+      enforce_admins: true
+      required_status_checks:
+        strict: true
+        contexts: []
+      restrictions: null
+
+# Require all issues and PRs to be assigned to a CODEOWNER
+# (GitHub does not enforce this natively, but this is a best-practice config)
+# Use GitHub Actions or branch protection rules for strict enforcement if needed
+
+# Issue assignment policy (for reference):
+#   - All new issues and PRs should be assigned to @idvoretskyi (see CODEOWNERS)

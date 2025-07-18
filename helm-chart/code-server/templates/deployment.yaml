@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "code-server.fullname" . }}
+  namespace: {{ include "code-server.namespace" . }}
+  labels:
+    {{- include "code-server.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "code-server.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "code-server.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "code-server.serviceAccountName" . }}
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.service.targetPort }}
+          protocol: TCP
+        env:
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "code-server.fullname" . }}-secret
+              key: password
+        - name: SUDO_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "code-server.fullname" . }}-secret
+              key: password
+        {{- range $key, $value := .Values.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- with .Values.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+        {{- if .Values.persistence.enabled }}
+        - name: code-server-storage
+          mountPath: /home/coder
+        {{- end }}
+        - name: config-volume
+          mountPath: /home/coder/.config/code-server/config.yaml
+          subPath: config.yaml
+        - name: config-volume
+          mountPath: /home/coder/.local/share/code-server/User/settings.json
+          subPath: settings.json
+        {{- if .Values.dockerSocket.enabled }}
+        - name: docker-socket
+          mountPath: /var/run/docker.sock
+        {{- end }}
+        {{- with .Values.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.livenessProbe }}
+        livenessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.readinessProbe }}
+        readinessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      volumes:
+      {{- if .Values.persistence.enabled }}
+      - name: code-server-storage
+        persistentVolumeClaim:
+          claimName: {{ include "code-server.fullname" . }}-pvc
+      {{- end }}
+      - name: config-volume
+        configMap:
+          name: {{ include "code-server.fullname" . }}-config
+      {{- if .Values.dockerSocket.enabled }}
+      - name: docker-socket
+        hostPath:
+          path: {{ .Values.dockerSocket.hostPath }}
+          type: Socket
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
