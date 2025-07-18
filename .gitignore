@@ -45,7 +45,6 @@ logs/
 
 # Claude AI files
 CLAUDE.md
-.github/copilot-instructions.md
 .claude_session
 .claude_history
 claude_*.log
@@ -96,3 +95,5 @@ pip-delete-this-directory.txt
 values-*.yaml
 *-values.yaml
 values.local.yaml
+
+.github/copilot-instructions.md
