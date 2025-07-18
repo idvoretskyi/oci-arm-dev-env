@@ -95,3 +95,4 @@ pip-delete-this-directory.txt
 values-*.yaml
 *-values.yaml
 values.local.yaml
+.github/copilot-instructions.md
