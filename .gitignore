@@ -45,6 +45,7 @@ logs/
 
 # Claude AI files
 CLAUDE.md
+.github/copilot-instructions.md
 .claude_session
 .claude_history
 claude_*.log

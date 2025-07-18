@@ -121,15 +121,16 @@ compartment_id   = "$COMPARTMENT_ID"
 ssh_public_key_path = "$SSH_KEY_PATH"
 vm_username      = "$(whoami)"
 
-# Instance configuration
+# Instance configuration (Always Free tier maximum)
 instance_shape           = "VM.Standard.A1.Flex"
-instance_ocpus          = 2
-instance_memory_in_gbs  = 12
+instance_ocpus          = 4                    # Maximum for Always Free
+instance_memory_in_gbs  = 24                   # Maximum for Always Free
 boot_volume_size_in_gbs = 50
 
-# K3s cluster configuration
-master_nodes = 1
-worker_nodes = 2
+# K3d HA cluster configuration
+k3d_nodes    = 6     # Total nodes (3 masters + 3 workers)
+k3d_masters  = 3     # HA masters (odd number for quorum)
+k3d_workers  = 3     # HA workers for load distribution
 EOF
     
     print_info "terraform.tfvars created successfully"
@@ -174,20 +175,22 @@ show_connection_info() {
     
     cd "$TERRAFORM_DIR"
     
-    MASTER_IP=$(terraform output -raw master_public_ips | sed 's/\[//g' | sed 's/\]//g' | sed 's/"//g' | cut -d',' -f1)
-    SSH_COMMAND=$(terraform output -raw ssh_command_master)
+    K3D_VM_IP=$(terraform output -raw k3d_vm_public_ip)
+    SSH_COMMAND=$(terraform output -raw ssh_command)
     KUBECONFIG_COMMAND=$(terraform output -raw kubeconfig_command)
     
     echo
-    print_info "=== CONNECTION INFORMATION ==="
-    echo "Master node IP: $MASTER_IP"
-    echo "SSH to master: $SSH_COMMAND"
+    print_info "=== K3D HA CLUSTER CONNECTION INFORMATION ==="
+    echo "K3d VM IP: $K3D_VM_IP"
+    echo "SSH to VM: $SSH_COMMAND"
     echo "Get kubeconfig: $KUBECONFIG_COMMAND"
     echo
-    print_info "After deployment, wait 5-10 minutes for K3s installation to complete."
-    print_info "Then you can connect to the master node and check cluster status with:"
-    echo "  kubectl get nodes"
-    echo "  kubectl get pods --all-namespaces"
+    print_info "After deployment, wait 10-15 minutes for K3d HA cluster installation to complete."
+    print_info "Then you can connect to the VM and check cluster status with:"
+    echo "  kubectl get nodes -o wide    # Should show 3 masters + 3 workers"
+    echo "  kubectl get pods -n kube-system"
+    echo "  k3d cluster list"
+    echo "  k3d node list"
     
     cd - > /dev/null
 }
