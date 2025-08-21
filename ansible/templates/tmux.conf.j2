@@ -1,0 +1,148 @@
+# =============================================================================
+# OCI ARM Development Instance - Tmux Configuration
+# =============================================================================
+# This file is managed by Ansible - do not edit manually
+
+# =============================================================================
+# BASIC SETTINGS
+# =============================================================================
+
+# Set default shell
+set-option -g default-shell /usr/bin/zsh
+
+# Enable 256 color support
+set -g default-terminal "screen-256color"
+set -ga terminal-overrides ",xterm-256color:Tc"
+
+# Set prefix key to Ctrl-a (screen-like)
+unbind C-b
+set -g prefix C-a
+bind C-a send-prefix
+
+# Enable mouse support
+set -g mouse on
+
+# Start windows and panes at 1, not 0
+set -g base-index 1
+setw -g pane-base-index 1
+
+# Renumber windows when a window is closed
+set -g renumber-windows on
+
+# Set scrollback history to 10,000 lines
+set -g history-limit 10000
+
+# Shorten command delay
+set -sg escape-time 1
+
+# Reload config file
+bind r source-file ~/.tmux.conf \; display "Config reloaded!"
+
+# =============================================================================
+# WINDOW AND PANE MANAGEMENT
+# =============================================================================
+
+# Split panes using | and -
+bind | split-window -h -c "#{pane_current_path}"
+bind - split-window -v -c "#{pane_current_path}"
+unbind '"'
+unbind %
+
+# Create new window in current path
+bind c new-window -c "#{pane_current_path}"
+
+# Switch panes using Alt-arrow without prefix
+bind -n M-Left select-pane -L
+bind -n M-Right select-pane -R
+bind -n M-Up select-pane -U
+bind -n M-Down select-pane -D
+
+# Resize panes using Shift-arrow
+bind -n S-Left resize-pane -L 5
+bind -n S-Right resize-pane -R 5
+bind -n S-Up resize-pane -U 5
+bind -n S-Down resize-pane -D 5
+
+# Switch windows using Ctrl-arrow
+bind -n C-Left previous-window
+bind -n C-Right next-window
+
+# =============================================================================
+# COPY MODE SETTINGS
+# =============================================================================
+
+# Use vim keybindings in copy mode
+setw -g mode-keys vi
+
+# Setup 'v' to begin selection as in Vim
+bind-key -T copy-mode-vi v send-keys -X begin-selection
+bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "xclip -in -selection clipboard"
+
+# Update default binding of `Enter` to also use copy-pipe
+unbind -T copy-mode-vi Enter
+bind-key -T copy-mode-vi Enter send-keys -X copy-pipe-and-cancel "xclip -in -selection clipboard"
+
+# =============================================================================
+# STATUS BAR CONFIGURATION
+# =============================================================================
+# Status bar configuration is handled by tmux-themepack plugin
+
+# =============================================================================
+# PLUGINS CONFIGURATION
+# =============================================================================
+
+# List of plugins
+set -g @plugin 'tmux-plugins/tpm'
+set -g @plugin 'tmux-plugins/tmux-sensible'
+set -g @plugin 'tmux-plugins/tmux-resurrect'
+set -g @plugin 'tmux-plugins/tmux-continuum'
+set -g @plugin 'tmux-plugins/tmux-yank'
+set -g @plugin 'tmux-plugins/tmux-copycat'
+set -g @plugin 'jimeh/tmux-themepack'
+
+# Plugin settings
+set -g @resurrect-strategy-vim 'session'
+set -g @resurrect-strategy-nvim 'session'
+set -g @resurrect-capture-pane-contents 'on'
+set -g @continuum-restore 'on'
+set -g @continuum-save-interval '15'
+
+# Themepack settings - use powerline double theme
+set -g @themepack 'powerline/double/cyan'
+
+# =============================================================================
+# DEVELOPMENT-SPECIFIC BINDINGS
+# =============================================================================
+
+# Quick session switching
+bind-key S choose-session
+
+# Quick window switching
+bind-key W choose-window
+
+# Development session shortcuts
+bind-key D new-session -d -s development -c ~/projects
+bind-key K new-session -d -s kubernetes -c ~/workspace
+
+# Docker shortcuts
+bind-key d split-window -h -c "#{pane_current_path}" "docker ps"
+bind-key D split-window -v -c "#{pane_current_path}" "docker logs -f "
+
+# Git shortcuts
+bind-key g split-window -h -c "#{pane_current_path}" "git status"
+bind-key G split-window -v -c "#{pane_current_path}" "git log --oneline -10"
+
+
+# =============================================================================
+# INITIALIZATION
+# =============================================================================
+
+# Initialize TMUX plugin manager (keep this line at the very bottom of tmux.conf)
+run '~/.tmux/plugins/tpm/tpm'
+
+# =============================================================================
+# WELCOME MESSAGE
+# =============================================================================
+
+# Display welcome message on new session
+set-hook -g session-created 'display-message "🚀 Welcome to your OCI ARM Development Environment!"'

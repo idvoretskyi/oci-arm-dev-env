@@ -1,49 +1,78 @@
-# OCI Code Server ARM
+# OCI Code Server ARM - Unified Development Platform
 
-Deploy code-server (VS Code in the browser) on Oracle Cloud Infrastructure (OCI) ARM instances with K3d High Availability cluster.
+Deploy a complete development environment with code-server (VS Code in the browser) on Oracle Cloud Infrastructure (OCI) ARM instances using a sophisticated Infrastructure as Code approach.
 
 ## Overview
 
-This project provides Infrastructure as Code (IaC) to deploy:
+This project combines **Terraform** and **Ansible** to provide:
+- **Infrastructure Management**: Terraform handles immutable infrastructure (networking, compute, storage)
+- **Configuration Management**: Ansible manages mutable configuration (software, services, user environment)
+- **Application Deployment**: Helm charts for code-server on K3d Kubernetes cluster
+- **Complete Automation**: Dynamic OCI configuration reading and comprehensive deployment scripts
+
+## Features
+
+**Infrastructure Layer (Terraform):**
 - Single OCI ARM instance (VM.Standard.A1.Flex) using Always Free tier maximum specs
 - K3d High Availability cluster (3 masters + 3 workers) running in Docker containers
+- VCN with public subnet, security lists, and comprehensive ingress rules
+- Extensive variable validation for security and correctness
+
+**Configuration Layer (Ansible):**
+- System updates, security patches, and package management
+- Development stack: Docker, Node.js, Python, VSCode, K3s with kubectl and Helm
+- User environment setup with custom aliases, functions, and development directories
+- Idempotent configuration that can be run multiple times safely
+
+**Application Layer:**
 - Code-server deployment with persistent storage and Helm charts
 - Nginx Ingress Controller for external access
-- Complete automation with dynamic OCI configuration
+- Complete monitoring and logging capabilities
 
 ## Prerequisites
 
 - OCI account with configured CLI/API access
 - Terraform installed
+- Ansible installed
 - SSH key pair available in `~/.ssh/`
 - OCI config file at `~/.oci/config`
-- Docker (for local K3d testing - optional)
 
 ## Quick Start
 
-1. **Deploy Infrastructure (Single VM with K3d HA):**
-   ```bash
-   ./deploy.sh
-   ```
+### Full Deployment (Infrastructure + Configuration)
 
-2. **SSH to VM and verify K3d HA cluster:**
+1. **Complete Deployment:**
    ```bash
-   ssh $USER@<vm-ip>
-   # K3d HA cluster created automatically during boot
-   kubectl get nodes  # Should show 3 masters + 3 workers
+   ./deploy.sh deploy
    ```
+   This will:
+   - Provision OCI infrastructure with Terraform
+   - Configure the system with Ansible (Docker, K3s, development tools)
+   - Set up K3d HA cluster automatically
 
-3. **Deploy Code-Server with Helm:**
+2. **Deploy Code-Server:**
    ```bash
    ./deploy-code-server.sh
    ```
 
-4. **Access Code-Server:**
+3. **Access Code-Server:**
    ```bash
    # Port forward to access locally
    kubectl port-forward -n code-server svc/code-server-service 8080:8080
    ```
    Then visit: http://localhost:8080 (password: set in values.yaml)
+
+### Configuration-Only Updates
+
+For software updates without infrastructure changes:
+```bash
+./deploy.sh configure
+```
+
+For targeted updates:
+```bash
+ansible-playbook -i ansible/inventory.yml ansible/playbook.yml --tags docker,k3s
+```
 
 ## Architecture
 
