@@ -197,7 +197,6 @@ OCI ARM Instance (4 vCPUs, 24GB RAM)
 
 ## Documentation
 
-- `CLAUDE.md` - Detailed architecture guide
 - `ARCHITECTURE.md` - System design
 - `SECURITY.md` - Security practices
 
