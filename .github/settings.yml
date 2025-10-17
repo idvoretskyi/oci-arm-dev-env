@@ -1,7 +1,7 @@
-# Repository settings for oci-code-server-arm
+# Repository settings for oci-arm-dev-env
 
 repository:
-  description: "Deploy and manage code-server (VS Code in the browser) on Oracle Cloud Infrastructure ARM instances using K3d and Terraform."
+  description: "Complete cloud-native development environment on OCI ARM instances with K3d HA cluster, code-server, using Terraform/OpenTofu and Ansible."
   has_issues: true
   has_projects: true
   has_wiki: false

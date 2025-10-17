@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# OCI K3s Code Server ARM Deployment Script
+# OCI ARM Development Environment Deployment Script
+# Supports both Terraform and OpenTofu
 # This script reads OCI config dynamically and deploys the infrastructure
 
 set -e
@@ -16,6 +17,17 @@ OCI_CONFIG_FILE="$HOME/.oci/config"
 OCI_PROFILE="DEFAULT"
 SSH_KEY_PATH="$HOME/.ssh/id_ed25519.pub"
 TERRAFORM_DIR="./terraform"
+
+# Detect IaC tool (Terraform or OpenTofu)
+if [ "${TOFU:-false}" = "true" ] || command -v tofu &> /dev/null && [ -z "${TF_CLI:-}" ]; then
+    IAC_TOOL="tofu"
+    print_info() {
+        echo -e "${GREEN}[INFO]${NC} $1"
+    }
+    print_info "Using OpenTofu"
+else
+    IAC_TOOL="terraform"
+fi
 
 # Function to print colored output
 print_info() {
@@ -58,12 +70,16 @@ read_oci_config() {
 # Function to validate prerequisites
 validate_prerequisites() {
     print_info "Validating prerequisites..."
-    
-    # Check if terraform is installed
-    if ! command -v terraform &> /dev/null; then
-        print_error "Terraform is not installed. Please install Terraform first."
+
+    # Check if Terraform or OpenTofu is installed
+    if ! command -v "$IAC_TOOL" &> /dev/null; then
+        print_error "$IAC_TOOL is not installed. Please install Terraform or OpenTofu."
+        print_info "Install Terraform: https://www.terraform.io/downloads.html"
+        print_info "Install OpenTofu: https://opentofu.org/docs/intro/install/"
         exit 1
     fi
+
+    print_info "Using $IAC_TOOL ($(command -v $IAC_TOOL))"
     
     # Check if OCI CLI is installed
     if ! command -v oci &> /dev/null; then
@@ -138,18 +154,18 @@ EOF
 
 # Function to deploy infrastructure
 deploy_infrastructure() {
-    print_info "Deploying infrastructure with Terraform..."
-    
+    print_info "Deploying infrastructure with $IAC_TOOL..."
+
     cd "$TERRAFORM_DIR"
-    
-    # Initialize Terraform
-    print_info "Initializing Terraform..."
-    terraform init
-    
+
+    # Initialize
+    print_info "Initializing $IAC_TOOL..."
+    $IAC_TOOL init
+
     # Plan deployment
-    print_info "Planning Terraform deployment..."
-    terraform plan
-    
+    print_info "Planning $IAC_TOOL deployment..."
+    $IAC_TOOL plan
+
     # Ask for confirmation
     read -p "Do you want to proceed with the deployment? (y/N): " -n 1 -r
     echo
@@ -157,27 +173,27 @@ deploy_infrastructure() {
         print_info "Deployment cancelled."
         exit 0
     fi
-    
+
     # Apply deployment
-    print_info "Applying Terraform deployment..."
-    terraform apply -auto-approve
-    
+    print_info "Applying $IAC_TOOL deployment..."
+    $IAC_TOOL apply -auto-approve
+
     # Show outputs
     print_info "Deployment completed! Here are the outputs:"
-    terraform output
-    
+    $IAC_TOOL output
+
     cd - > /dev/null
 }
 
 # Function to show connection info
 show_connection_info() {
     print_info "Getting connection information..."
-    
+
     cd "$TERRAFORM_DIR"
-    
-    K3D_VM_IP=$(terraform output -raw k3d_vm_public_ip)
-    SSH_COMMAND=$(terraform output -raw ssh_command)
-    KUBECONFIG_COMMAND=$(terraform output -raw kubeconfig_command)
+
+    K3D_VM_IP=$($IAC_TOOL output -raw k3d_vm_public_ip)
+    SSH_COMMAND=$($IAC_TOOL output -raw ssh_command)
+    KUBECONFIG_COMMAND=$($IAC_TOOL output -raw kubeconfig_command)
     
     echo
     print_info "=== K3D HA CLUSTER CONNECTION INFORMATION ==="
@@ -197,7 +213,7 @@ show_connection_info() {
 
 # Main execution
 main() {
-    print_info "Starting OCI K3s Code Server ARM deployment..."
+    print_info "Starting OCI ARM Development Environment deployment..."
     
     # Read OCI configuration
     read_oci_config
@@ -245,9 +261,9 @@ wait_for_ssh() {
 # Function to update Ansible inventory
 update_ansible_inventory() {
     print_info "Updating Ansible inventory with instance IP..."
-    
+
     cd "$TERRAFORM_DIR"
-    PUBLIC_IP=$(terraform output -raw k3d_vm_public_ip 2>/dev/null)
+    PUBLIC_IP=$($IAC_TOOL output -raw k3d_vm_public_ip 2>/dev/null)
     
     if [[ -z "$PUBLIC_IP" ]]; then
         print_error "Could not retrieve public IP from Terraform outputs"
@@ -290,7 +306,7 @@ configure_instance() {
 
 # Enhanced main function with Ansible support
 main_with_ansible() {
-    print_info "Starting OCI K3s Code Server ARM deployment with configuration management..."
+    print_info "Starting OCI ARM Development Environment deployment with configuration management..."
     
     # Read OCI configuration
     read_oci_config
@@ -325,15 +341,15 @@ main_with_ansible() {
 # Function for configuration-only updates
 configure_only() {
     print_info "Running configuration-only update with Ansible..."
-    
+
     if [[ ! -d "ansible" ]]; then
         print_error "Ansible directory not found"
         exit 1
     fi
-    
-    # Get instance IP from Terraform
+
+    # Get instance IP
     cd "$TERRAFORM_DIR"
-    PUBLIC_IP=$(terraform output -raw k3d_vm_public_ip 2>/dev/null)
+    PUBLIC_IP=$($IAC_TOOL output -raw k3d_vm_public_ip 2>/dev/null)
     
     if [[ -z "$PUBLIC_IP" ]]; then
         print_error "Could not retrieve public IP. Is infrastructure deployed?"
@@ -365,14 +381,14 @@ case "${1:-}" in
     "destroy")
         print_info "Destroying infrastructure..."
         cd "$TERRAFORM_DIR"
-        terraform destroy -auto-approve
+        $IAC_TOOL destroy -auto-approve
         cd - > /dev/null
         print_info "Infrastructure destroyed successfully!"
         ;;
     "output")
-        print_info "Showing Terraform outputs..."
+        print_info "Showing $IAC_TOOL outputs..."
         cd "$TERRAFORM_DIR"
-        terraform output
+        $IAC_TOOL output
         cd - > /dev/null
         ;;
     "")
@@ -383,8 +399,15 @@ case "${1:-}" in
         echo "  deploy:    Full deployment (infrastructure + configuration)"
         echo "  configure: Configuration-only update with Ansible"
         echo "  destroy:   Destroy the infrastructure"
-        echo "  output:    Show Terraform outputs"
+        echo "  output:    Show $IAC_TOOL outputs"
         echo "  (no args): Deploy infrastructure only"
+        echo ""
+        echo "Environment variables:"
+        echo "  TOFU=true  Use OpenTofu instead of Terraform"
+        echo ""
+        echo "Examples:"
+        echo "  $0 deploy              # Deploy with Terraform"
+        echo "  TOFU=true $0 deploy    # Deploy with OpenTofu"
         exit 1
         ;;
 esac
