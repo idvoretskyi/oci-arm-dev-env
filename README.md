@@ -1,30 +1,25 @@
 # OCI ARM Development Environment
 
-Deploy a complete development environment on Oracle Cloud Infrastructure ARM instances using the Always Free tier. Includes K3d HA Kubernetes cluster and code-server (VS Code in browser).
+Deploy a K3d HA Kubernetes cluster on Oracle Cloud Infrastructure ARM instances using the Always Free tier. Perfect for development and testing with VS Code Remote SSH or tunnel.
 
 ## What You Get
 
 - **OCI ARM Instance**: 4 vCPUs, 24GB RAM (Always Free tier max)
 - **K3d HA Cluster**: 3 master + 3 worker nodes in containers
-- **Code-Server**: VS Code in your browser
 - **Terraform/OpenTofu**: Choose your IaC tool
-- **Ansible**: Automated configuration
-- **Helm**: Application deployment
+- **Docker, kubectl, Helm**: Pre-installed development tools
+- **VS Code Ready**: Use Remote SSH or tunnel to connect
 
 ## Quick Start
 
 ```bash
-# 1. Deploy infrastructure
+# Deploy infrastructure
 ./deploy.sh deploy              # Using Terraform
 # OR
 TOFU=true ./deploy.sh deploy    # Using OpenTofu
 
-# 2. Deploy code-server
-./deploy-code-server.sh
-
-# 3. Access VS Code in browser
-kubectl port-forward -n code-server svc/code-server-service 8080:8080
-# Open http://localhost:8080
+# Connect with VS Code
+code --remote ssh-remote+$USER@<instance-ip> /path/to/workspace
 ```
 
 ## Prerequisites
@@ -33,12 +28,14 @@ kubectl port-forward -n code-server svc/code-server-service 8080:8080
 
 **Local Tools** (macOS):
 ```bash
-brew install terraform kubectl ansible
+brew install terraform kubectl
 # OR
-brew install opentofu kubectl ansible
+brew install opentofu kubectl
 ```
 
 **OCI Configuration**: Ensure `~/.oci/config` exists with your credentials
+
+**VS Code** (optional): Install [Remote - SSH extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh)
 
 ## Installation
 
@@ -60,19 +57,24 @@ This deploys:
 - K3d HA cluster (6 nodes: 3 masters + 3 workers)
 - Docker, kubectl, Helm, development tools
 
-### 3. Deploy Code-Server
+### 3. Connect
 
+**Via SSH:**
 ```bash
-./deploy-code-server.sh
+ssh $USER@<instance-ip>
 ```
 
-### 4. Access
-
+**Via VS Code Remote SSH:**
 ```bash
-kubectl port-forward -n code-server svc/code-server-service 8080:8080
+code --remote ssh-remote+$USER@<instance-ip> /home/$USER
 ```
 
-Open http://localhost:8080 (default password in `helm-chart/code-server/values.yaml`)
+**Via VS Code Tunnel:**
+```bash
+# On the instance
+code tunnel
+# Follow the prompts to authenticate
+```
 
 ## Common Commands
 
@@ -80,50 +82,41 @@ Open http://localhost:8080 (default password in `helm-chart/code-server/values.y
 
 ```bash
 ./deploy.sh deploy       # Full deployment
-./deploy.sh configure    # Update configuration only
 ./deploy.sh output       # Show connection info
 ./deploy.sh destroy      # Destroy everything
-```
 
-### Code-Server
-
-```bash
-./deploy-code-server.sh status    # Check status
-./deploy-code-server.sh logs      # View logs
-./deploy-code-server.sh upgrade   # Upgrade
-./deploy-code-server.sh delete    # Remove
+# Using OpenTofu
+TOFU=true ./deploy.sh deploy
+TOFU=true ./deploy.sh destroy
 ```
 
 ### Cluster Management
 
-SSH to instance, then:
-
 ```bash
+# SSH to instance
+ssh $USER@<instance-ip>
+
+# View cluster
 kubectl get nodes -o wide                   # View 6 nodes
 kubectl get pods -n kube-system             # System pods
 k3d cluster list                            # K3d clusters
+
+# Scale cluster
 k3d node create worker --cluster k3s-ha-cluster --role agent  # Add worker
+k3d node delete <node-name>                 # Remove node
 ```
 
 ## Configuration
 
-### Change Code-Server Password
-
-```bash
-helm upgrade code-server ./helm-chart/code-server -n code-server \
-  --set codeServer.password=your-new-password
-```
-
-### Customize Infrastructure
-
 Edit auto-generated `terraform/terraform.tfvars`:
 
 ```hcl
-instance_ocpus          = 4     # vCPUs
-instance_memory_in_gbs  = 24    # RAM
+instance_ocpus          = 4     # vCPUs (Always Free max)
+instance_memory_in_gbs  = 24    # RAM (Always Free max)
 k3d_nodes              = 6     # Total K3d nodes
-k3d_masters            = 3     # Masters (odd number)
+k3d_masters            = 3     # Masters (odd number for quorum)
 k3d_workers            = 3     # Workers
+boot_volume_size_in_gbs = 50    # Storage
 ```
 
 ## Troubleshooting
@@ -142,23 +135,16 @@ kubectl get nodes -o wide
 sudo cat /var/log/cloud-init-output.log
 ```
 
-### Check Code-Server
-
-```bash
-kubectl get pods -n code-server
-kubectl logs -n code-server deployment/code-server
-```
-
 ### Common Issues
 
 **K3d not ready**: Wait 10-15 minutes after deployment for cluster initialization
 
-**Can't access code-server**: Use direct port-forward:
-```bash
-kubectl port-forward -n code-server pod/<pod-name> 8080:8080
-```
+**SSH connection refused**: Check if instance is running in OCI console
 
-**Connection refused**: Check if instance is running in OCI console
+**VS Code can't connect**: Ensure your SSH key is added:
+```bash
+ssh-add ~/.ssh/id_ed25519
+```
 
 ## Architecture
 
@@ -166,12 +152,12 @@ Single ARM instance with containerized K3d cluster:
 
 ```
 OCI ARM Instance (4 vCPUs, 24GB RAM)
-├── Docker
-│   └── K3d Cluster
-│       ├── 3 Masters (HA control plane)
+├── Docker Engine
+│   └── K3d HA Cluster
+│       ├── 3 Masters (HA control plane with etcd quorum)
 │       └── 3 Workers (workload distribution)
-├── Code-Server (VS Code)
-└── Storage (Docker volumes)
+├── Development Tools (kubectl, Helm, Docker CLI)
+└── Storage (Docker volumes for persistence)
 ```
 
 **Benefits:**
@@ -179,6 +165,7 @@ OCI ARM Instance (4 vCPUs, 24GB RAM)
 - Production-like HA patterns
 - Always Free tier maximized
 - Fast container deployment
+- VS Code Remote SSH/Tunnel ready
 
 ## Cost
 
@@ -192,8 +179,8 @@ OCI ARM Instance (4 vCPUs, 24GB RAM)
 
 - SSH key authentication only
 - Firewall configured (UFW)
-- Security lists limit ports: 22, 80, 443, 6443, 8080
-- Change default code-server password!
+- Security lists limit ports: 22, 80, 443, 6443
+- No password-based authentication
 
 ## Documentation
 
