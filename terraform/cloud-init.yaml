@@ -1,0 +1,87 @@
+#cloud-config
+
+users:
+  - name: ${username}
+    groups: sudo, docker
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    lock_passwd: true
+    ssh_authorized_keys:
+      - ${ssh_public_key}
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - curl
+  - wget
+  - git
+  - vim
+  - htop
+  - docker.io
+  - ufw
+
+write_files:
+  - path: /tmp/k3d-setup.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      set -e
+      
+      echo "=== Starting K3d HA cluster setup ==="
+      
+      # Configure firewall
+      ufw allow 22/tcp
+      ufw allow 6443/tcp
+      ufw allow 80/tcp
+      ufw allow 443/tcp
+      ufw --force enable
+      
+      # Enable and start Docker
+      systemctl enable docker
+      systemctl start docker
+      
+      # Add user to docker group
+      usermod -aG docker ${username}
+      
+      # Install K3d
+      curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+      
+      # Install kubectl
+      curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/arm64/kubectl"
+      chmod +x kubectl
+      mv kubectl /usr/local/bin/
+      
+      # Install Helm
+      curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      
+      # Wait for Docker to be ready
+      sleep 10
+      
+      # Create K3d HA cluster
+      k3d cluster create k3s-ha-cluster \
+        --servers 3 \
+        --agents 3 \
+        --port "80:80@loadbalancer" \
+        --port "443:443@loadbalancer" \
+        --port "6443:6443@loadbalancer" \
+        --image rancher/k3s:latest \
+        --k3s-arg "--disable=traefik@server:*" \
+        --wait
+      
+      # Set up kubeconfig for user
+      mkdir -p /home/${username}/.kube
+      k3d kubeconfig get k3s-ha-cluster > /home/${username}/.kube/config
+      chown -R ${username}:${username} /home/${username}/.kube
+      
+      # Enable kubectl bash completion
+      kubectl completion bash > /etc/bash_completion.d/kubectl
+      
+      echo "=== K3d HA cluster setup completed ==="
+      echo "Cluster: 3 masters + 3 workers"
+      echo "Ready for development!"
+
+runcmd:
+  - /tmp/k3d-setup.sh
+
+final_message: "K3d HA cluster ready - 3 masters + 3 workers. Login via SSH and run: kubectl get nodes"

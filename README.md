@@ -28,9 +28,9 @@ code --remote ssh-remote+$USER@<instance-ip> /path/to/workspace
 
 **Local Tools** (macOS):
 ```bash
-brew install terraform kubectl
+brew install terraform
 # OR
-brew install opentofu kubectl
+brew install opentofu
 ```
 
 **OCI Configuration**: Ensure `~/.oci/config` exists with your credentials
@@ -52,10 +52,13 @@ cd oci-arm-dev-env
 ./deploy.sh deploy
 ```
 
-This deploys:
-- OCI infrastructure (VCN, subnet, ARM instance)
-- K3d HA cluster (6 nodes: 3 masters + 3 workers)
-- Docker, kubectl, Helm, development tools
+This will:
+1. Provision OCI infrastructure (VCN, subnet, ARM instance)
+2. Install Docker, K3d, kubectl, Helm via cloud-init
+3. Create K3d HA cluster (3 masters + 3 workers)
+4. Configure development environment
+
+Wait 10-15 minutes for cloud-init to complete the setup.
 
 ### 3. Connect
 

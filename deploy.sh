@@ -236,147 +236,10 @@ main() {
     print_info "Deployment process completed successfully!"
 }
 
-# Function to wait for SSH connectivity
-wait_for_ssh() {
-    print_info "Waiting for SSH connectivity..."
-    
-    local max_attempts=30
-    local attempt=1
-    
-    while [[ $attempt -le $max_attempts ]]; do
-        if ssh -i ~/.ssh/id_ed25519 -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ubuntu@${PUBLIC_IP} "echo 'SSH connection successful'" &>/dev/null 2>&1; then
-            print_info "SSH connectivity established ✓"
-            return 0
-        fi
-        
-        echo -n "."
-        sleep 10
-        ((attempt++))
-    done
-    
-    print_error "SSH connectivity could not be established after $((max_attempts * 10)) seconds"
-    exit 1
-}
-
-# Function to update Ansible inventory
-update_ansible_inventory() {
-    print_info "Updating Ansible inventory with instance IP..."
-
-    cd "$TERRAFORM_DIR"
-    PUBLIC_IP=$($IAC_TOOL output -raw k3d_vm_public_ip 2>/dev/null)
-    
-    if [[ -z "$PUBLIC_IP" ]]; then
-        print_error "Could not retrieve public IP from Terraform outputs"
-        exit 1
-    fi
-    
-    cd ..
-    
-    # Update Ansible inventory with the IP
-    if [[ -f "ansible/inventory.yml" ]]; then
-        sed -i.bak "s/REPLACE_WITH_PUBLIC_IP/${PUBLIC_IP}/g" "ansible/inventory.yml"
-        print_info "Updated Ansible inventory with instance IP: ${PUBLIC_IP} ✓"
-    fi
-}
-
-# Function to configure instance with Ansible
-configure_instance() {
-    print_info "Configuring instance with Ansible..."
-    
-    if [[ ! -d "ansible" ]]; then
-        print_warning "Ansible directory not found, skipping configuration management"
-        return 0
-    fi
-    
-    cd ansible
-    
-    # Test Ansible connectivity
-    print_info "Testing Ansible connectivity..."
-    if ! ansible -i inventory.yml all -m ping; then
-        print_warning "Ansible connectivity test failed, but continuing..."
-    fi
-    
-    # Run the playbook
-    print_info "Running Ansible playbook..."
-    ansible-playbook -i inventory.yml playbook.yml
-    
-    cd ..
-    print_info "Ansible configuration completed ✓"
-}
-
-# Enhanced main function with Ansible support
-main_with_ansible() {
-    print_info "Starting OCI ARM Development Environment deployment with configuration management..."
-    
-    # Read OCI configuration
-    read_oci_config
-    
-    # Validate prerequisites
-    validate_prerequisites
-    
-    # Get compartment ID
-    get_compartment_id
-    
-    # Create terraform.tfvars
-    create_tfvars
-    
-    # Deploy infrastructure
-    deploy_infrastructure
-    
-    # Update Ansible inventory
-    update_ansible_inventory
-    
-    # Wait for SSH connectivity
-    wait_for_ssh
-    
-    # Configure instance with Ansible
-    configure_instance
-    
-    # Show connection info
-    show_connection_info
-    
-    print_info "Full deployment process (Infrastructure + Configuration) completed successfully!"
-}
-
-# Function for configuration-only updates
-configure_only() {
-    print_info "Running configuration-only update with Ansible..."
-
-    if [[ ! -d "ansible" ]]; then
-        print_error "Ansible directory not found"
-        exit 1
-    fi
-
-    # Get instance IP
-    cd "$TERRAFORM_DIR"
-    PUBLIC_IP=$($IAC_TOOL output -raw k3d_vm_public_ip 2>/dev/null)
-    
-    if [[ -z "$PUBLIC_IP" ]]; then
-        print_error "Could not retrieve public IP. Is infrastructure deployed?"
-        exit 1
-    fi
-    
-    cd ..
-    
-    # Test SSH connectivity
-    if ! ssh -i ~/.ssh/id_ed25519 -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ubuntu@${PUBLIC_IP} "echo 'SSH connection successful'" &>/dev/null; then
-        print_error "SSH connectivity failed. Check if instance is running."
-        exit 1
-    fi
-    
-    # Run Ansible configuration
-    configure_instance
-    
-    print_info "Configuration update completed successfully!"
-}
-
 # Handle script arguments
 case "${1:-}" in
     "deploy")
-        main_with_ansible
-        ;;
-    "configure")
-        configure_only
+        main
         ;;
     "destroy")
         print_info "Destroying infrastructure..."
@@ -395,12 +258,11 @@ case "${1:-}" in
         main
         ;;
     *)
-        echo "Usage: $0 [deploy|configure|destroy|output]"
-        echo "  deploy:    Full deployment (infrastructure + configuration)"
-        echo "  configure: Configuration-only update with Ansible"
-        echo "  destroy:   Destroy the infrastructure"
-        echo "  output:    Show $IAC_TOOL outputs"
-        echo "  (no args): Deploy infrastructure only"
+        echo "Usage: $0 [deploy|destroy|output]"
+        echo "  deploy:    Deploy infrastructure"
+        echo "  destroy:   Destroy infrastructure"
+        echo "  output:    Show outputs"
+        echo "  (no args): Same as deploy"
         echo ""
         echo "Environment variables:"
         echo "  TOFU=true  Use OpenTofu instead of Terraform"
