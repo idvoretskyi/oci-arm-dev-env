@@ -1,8 +1,14 @@
 #cloud-config
-
 users:
   - name: ${username}
-    groups: sudo, docker
+    groups: sudo
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    lock_passwd: true
+    ssh_authorized_keys:
+      - ${ssh_public_key}
+  - name: ubuntu
+    groups: sudo
     shell: /bin/bash
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     lock_passwd: true
@@ -16,35 +22,33 @@ packages:
   - curl
   - wget
   - git
-  - vim
+  - unzip
   - htop
+  - vim
   - docker.io
   - ufw
 
 write_files:
-  - path: /tmp/k3d-setup.sh
+  - path: /tmp/k3d-ha-setup.sh
     permissions: '0755'
     content: |
       #!/bin/bash
       set -e
-      
-      echo "=== Starting K3d HA cluster setup ==="
       
       # Configure firewall
       ufw allow 22/tcp
       ufw allow 6443/tcp
       ufw allow 80/tcp
       ufw allow 443/tcp
+      ufw allow 8080/tcp
       ufw --force enable
-      
-      # Enable and start Docker
-      systemctl enable docker
-      systemctl start docker
       
       # Add user to docker group
       usermod -aG docker ${username}
+      systemctl enable docker
+      systemctl start docker
       
-      # Install K3d
+      # Install K3d (latest version)
       curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
       
       # Install kubectl
@@ -60,28 +64,30 @@ write_files:
       
       # Create K3d HA cluster
       k3d cluster create k3s-ha-cluster \
-        --servers 3 \
-        --agents 3 \
-        --port "80:80@loadbalancer" \
-        --port "443:443@loadbalancer" \
+        --servers ${k3d_masters} \
+        --agents ${k3d_workers} \
+        --port "8080:80@loadbalancer" \
+        --port "8443:443@loadbalancer" \
         --port "6443:6443@loadbalancer" \
         --image rancher/k3s:latest \
         --k3s-arg "--disable=traefik@server:*" \
+        --k3s-arg "--disable=servicelb@server:*" \
         --wait
       
       # Set up kubeconfig for user
       mkdir -p /home/${username}/.kube
       k3d kubeconfig get k3s-ha-cluster > /home/${username}/.kube/config
-      chown -R ${username}:${username} /home/${username}/.kube
+      chown ${username}:${username} /home/${username}/.kube/config
       
-      # Enable kubectl bash completion
-      kubectl completion bash > /etc/bash_completion.d/kubectl
+      # Install Nginx Ingress Controller
+      kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/cloud/deploy.yaml
       
-      echo "=== K3d HA cluster setup completed ==="
-      echo "Cluster: 3 masters + 3 workers"
-      echo "Ready for development!"
+      # Wait for ingress controller
+      kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=300s || true
+      
+      echo "K3d HA cluster setup completed"
 
 runcmd:
-  - /tmp/k3d-setup.sh
+  - /tmp/k3d-ha-setup.sh
 
-final_message: "K3d HA cluster ready - 3 masters + 3 workers. Login via SSH and run: kubectl get nodes"
+final_message: "K3d HA cluster setup completed - ${k3d_masters} masters + ${k3d_workers} workers ready"

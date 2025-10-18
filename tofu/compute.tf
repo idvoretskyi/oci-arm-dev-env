@@ -24,16 +24,16 @@ resource "oci_core_instance" "k3d_vm" {
 
   metadata = {
     ssh_authorized_keys = local.ssh_public_key
-    user_data = base64encode(templatefile("${path.module}/cloud-init-k3d.yaml", {
-      username = var.vm_username
+    user_data = base64encode(templatefile("${path.module}/cloud-init.yaml", {
+      username       = var.vm_username
       ssh_public_key = local.ssh_public_key
-      k3d_masters = var.k3d_masters
-      k3d_workers = var.k3d_workers
+      k3d_masters    = var.k3d_masters
+      k3d_workers    = var.k3d_workers
     }))
   }
 
   freeform_tags = {
-    "Project" = "k3d-code-server"
+    "Project" = "oci-arm-dev-env"
     "Type"    = "k3d-ha-cluster"
   }
 

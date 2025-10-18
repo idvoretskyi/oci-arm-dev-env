@@ -104,14 +104,13 @@ k3d node delete <node-name>                 # Remove node
 
 ## Configuration
 
-Edit auto-generated `tofu/terraform.tfvars`:
+Edit `tofu/terraform.tfvars` after first deployment:
 
 ```hcl
 instance_ocpus          = 4     # vCPUs (Always Free max)
 instance_memory_in_gbs  = 24    # RAM (Always Free max)
-k3d_nodes              = 6     # Total K3d nodes
-k3d_masters            = 3     # Masters (odd number for quorum)
-k3d_workers            = 3     # Workers
+k3d_masters             = 3     # Master nodes (odd for HA)
+k3d_workers             = 3     # Worker nodes
 boot_volume_size_in_gbs = 50    # Storage
 ```
 

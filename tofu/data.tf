@@ -11,20 +11,8 @@ data "oci_core_images" "ubuntu_images" {
   sort_order               = "DESC"
 }
 
-data "oci_identity_compartments" "root_compartment" {
-  compartment_id = var.tenancy_ocid
-}
-
 locals {
-  # Use the first availability domain if not specified
-  availability_domain = var.availability_domain != "" ? var.availability_domain : data.oci_identity_availability_domains.ads.availability_domains[0].name
-  
-  # Use the most recent Ubuntu 24.04 ARM image
-  ubuntu_image_id = data.oci_core_images.ubuntu_images.images[0].id
-  
-  # SSH public key content
-  ssh_public_key = file(pathexpand(var.ssh_public_key_path))
-  
-  # Total K3d nodes (containerized)
-  total_k3d_nodes = var.k3d_masters + var.k3d_workers
+  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+  ubuntu_image_id     = data.oci_core_images.ubuntu_images.images[0].id
+  ssh_public_key      = file(pathexpand(var.ssh_public_key_path))
 }
