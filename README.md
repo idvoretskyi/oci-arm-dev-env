@@ -6,7 +6,7 @@ Deploy a K3d HA Kubernetes cluster on Oracle Cloud Infrastructure ARM instances 
 
 - **OCI ARM Instance**: 4 vCPUs, 24GB RAM (Always Free tier max)
 - **K3d HA Cluster**: 3 master + 3 worker nodes in containers
-- **Terraform/OpenTofu**: Choose your IaC tool
+- **OpenTofu**: Modern infrastructure as code tool
 - **Docker, kubectl, Helm**: Pre-installed development tools
 - **VS Code Ready**: Use Remote SSH or tunnel to connect
 
@@ -14,9 +14,7 @@ Deploy a K3d HA Kubernetes cluster on Oracle Cloud Infrastructure ARM instances 
 
 ```bash
 # Deploy infrastructure
-./deploy.sh deploy              # Using Terraform
-# OR
-TOFU=true ./deploy.sh deploy    # Using OpenTofu
+./deploy.sh deploy
 
 # Connect with VS Code
 code --remote ssh-remote+$USER@<instance-ip> /path/to/workspace
@@ -28,8 +26,6 @@ code --remote ssh-remote+$USER@<instance-ip> /path/to/workspace
 
 **Local Tools** (macOS):
 ```bash
-brew install terraform
-# OR
 brew install opentofu
 ```
 
@@ -53,10 +49,11 @@ cd oci-arm-dev-env
 ```
 
 This will:
-1. Provision OCI infrastructure (VCN, subnet, ARM instance)
-2. Install Docker, K3d, kubectl, Helm via cloud-init
-3. Create K3d HA cluster (3 masters + 3 workers)
-4. Configure development environment
+1. Read OCI config from `~/.oci/config`
+2. Provision OCI infrastructure (VCN, subnet, ARM instance) using OpenTofu
+3. Install Docker, K3d, kubectl, Helm via cloud-init
+4. Create K3d HA cluster (3 masters + 3 workers)
+5. Configure development environment
 
 Wait 10-15 minutes for cloud-init to complete the setup.
 
@@ -87,10 +84,6 @@ code tunnel
 ./deploy.sh deploy       # Full deployment
 ./deploy.sh output       # Show connection info
 ./deploy.sh destroy      # Destroy everything
-
-# Using OpenTofu
-TOFU=true ./deploy.sh deploy
-TOFU=true ./deploy.sh destroy
 ```
 
 ### Cluster Management
@@ -111,7 +104,7 @@ k3d node delete <node-name>                 # Remove node
 
 ## Configuration
 
-Edit auto-generated `terraform/terraform.tfvars`:
+Edit auto-generated `tofu/terraform.tfvars`:
 
 ```hcl
 instance_ocpus          = 4     # vCPUs (Always Free max)

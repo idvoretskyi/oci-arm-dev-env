@@ -1,7 +1,7 @@
 # Repository settings for oci-arm-dev-env
 
 repository:
-  description: "K3d HA Kubernetes cluster on OCI ARM Always Free tier with Terraform/OpenTofu. VS Code Remote SSH ready."
+  description: "K3d HA Kubernetes cluster on OCI ARM Always Free tier with OpenTofu. VS Code Remote SSH ready."
   has_issues: true
   has_projects: true
   has_wiki: false

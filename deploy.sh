@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # OCI ARM Development Environment Deployment Script
-# Supports both Terraform and OpenTofu
+# Uses OpenTofu for infrastructure provisioning
 # This script reads OCI config dynamically and deploys the infrastructure
 
 set -e
@@ -16,18 +16,8 @@ NC='\033[0m' # No Color
 OCI_CONFIG_FILE="$HOME/.oci/config"
 OCI_PROFILE="DEFAULT"
 SSH_KEY_PATH="$HOME/.ssh/id_ed25519.pub"
-TERRAFORM_DIR="./terraform"
-
-# Detect IaC tool (Terraform or OpenTofu)
-if [ "${TOFU:-false}" = "true" ] || command -v tofu &> /dev/null && [ -z "${TF_CLI:-}" ]; then
-    IAC_TOOL="tofu"
-    print_info() {
-        echo -e "${GREEN}[INFO]${NC} $1"
-    }
-    print_info "Using OpenTofu"
-else
-    IAC_TOOL="terraform"
-fi
+TOFU_DIR="./tofu"
+IAC_TOOL="tofu"
 
 # Function to print colored output
 print_info() {
@@ -71,33 +61,34 @@ read_oci_config() {
 validate_prerequisites() {
     print_info "Validating prerequisites..."
 
-    # Check if Terraform or OpenTofu is installed
-    if ! command -v "$IAC_TOOL" &> /dev/null; then
-        print_error "$IAC_TOOL is not installed. Please install Terraform or OpenTofu."
-        print_info "Install Terraform: https://www.terraform.io/downloads.html"
+    # Check if OpenTofu is installed
+    if ! command -v tofu &> /dev/null; then
+        print_error "OpenTofu is not installed."
         print_info "Install OpenTofu: https://opentofu.org/docs/intro/install/"
+        print_info "  macOS: brew install opentofu"
+        print_info "  Linux: https://opentofu.org/docs/intro/install/deb/"
         exit 1
     fi
 
-    print_info "Using $IAC_TOOL ($(command -v $IAC_TOOL))"
-    
+    print_info "Using OpenTofu ($(command -v tofu))"
+
     # Check if OCI CLI is installed
     if ! command -v oci &> /dev/null; then
         print_warning "OCI CLI is not installed. It's recommended but not required."
     fi
-    
+
     # Check if SSH key exists
     if [ ! -f "$SSH_KEY_PATH" ]; then
         print_error "SSH public key not found at $SSH_KEY_PATH"
         exit 1
     fi
-    
+
     # Check if private key exists
     if [ ! -f "$PRIVATE_KEY_PATH" ]; then
         print_error "OCI private key not found at $PRIVATE_KEY_PATH"
         exit 1
     fi
-    
+
     print_info "All prerequisites validated successfully"
 }
 
@@ -126,8 +117,8 @@ get_compartment_id() {
 # Function to create terraform.tfvars
 create_tfvars() {
     print_info "Creating terraform.tfvars file..."
-    
-    cat > "$TERRAFORM_DIR/terraform.tfvars" << EOF
+
+    cat > "$TOFU_DIR/terraform.tfvars" << EOF
 tenancy_ocid     = "$TENANCY_OCID"
 user_ocid        = "$USER_OCID"
 fingerprint      = "$FINGERPRINT"
@@ -154,17 +145,17 @@ EOF
 
 # Function to deploy infrastructure
 deploy_infrastructure() {
-    print_info "Deploying infrastructure with $IAC_TOOL..."
+    print_info "Deploying infrastructure with OpenTofu..."
 
-    cd "$TERRAFORM_DIR"
+    cd "$TOFU_DIR"
 
     # Initialize
-    print_info "Initializing $IAC_TOOL..."
-    $IAC_TOOL init
+    print_info "Initializing OpenTofu..."
+    tofu init
 
     # Plan deployment
-    print_info "Planning $IAC_TOOL deployment..."
-    $IAC_TOOL plan
+    print_info "Planning OpenTofu deployment..."
+    tofu plan
 
     # Ask for confirmation
     read -p "Do you want to proceed with the deployment? (y/N): " -n 1 -r
@@ -175,12 +166,12 @@ deploy_infrastructure() {
     fi
 
     # Apply deployment
-    print_info "Applying $IAC_TOOL deployment..."
-    $IAC_TOOL apply -auto-approve
+    print_info "Applying OpenTofu deployment..."
+    tofu apply -auto-approve
 
     # Show outputs
     print_info "Deployment completed! Here are the outputs:"
-    $IAC_TOOL output
+    tofu output
 
     cd - > /dev/null
 }
@@ -189,12 +180,12 @@ deploy_infrastructure() {
 show_connection_info() {
     print_info "Getting connection information..."
 
-    cd "$TERRAFORM_DIR"
+    cd "$TOFU_DIR"
 
-    K3D_VM_IP=$($IAC_TOOL output -raw k3d_vm_public_ip)
-    SSH_COMMAND=$($IAC_TOOL output -raw ssh_command)
-    KUBECONFIG_COMMAND=$($IAC_TOOL output -raw kubeconfig_command)
-    
+    K3D_VM_IP=$(tofu output -raw k3d_vm_public_ip)
+    SSH_COMMAND=$(tofu output -raw ssh_command)
+    KUBECONFIG_COMMAND=$(tofu output -raw kubeconfig_command)
+
     echo
     print_info "=== K3D HA CLUSTER CONNECTION INFORMATION ==="
     echo "K3d VM IP: $K3D_VM_IP"
@@ -207,7 +198,7 @@ show_connection_info() {
     echo "  kubectl get pods -n kube-system"
     echo "  k3d cluster list"
     echo "  k3d node list"
-    
+
     cd - > /dev/null
 }
 
@@ -243,15 +234,15 @@ case "${1:-}" in
         ;;
     "destroy")
         print_info "Destroying infrastructure..."
-        cd "$TERRAFORM_DIR"
-        $IAC_TOOL destroy -auto-approve
+        cd "$TOFU_DIR"
+        tofu destroy -auto-approve
         cd - > /dev/null
         print_info "Infrastructure destroyed successfully!"
         ;;
     "output")
-        print_info "Showing $IAC_TOOL outputs..."
-        cd "$TERRAFORM_DIR"
-        $IAC_TOOL output
+        print_info "Showing OpenTofu outputs..."
+        cd "$TOFU_DIR"
+        tofu output
         cd - > /dev/null
         ;;
     "")
@@ -263,13 +254,6 @@ case "${1:-}" in
         echo "  destroy:   Destroy infrastructure"
         echo "  output:    Show outputs"
         echo "  (no args): Same as deploy"
-        echo ""
-        echo "Environment variables:"
-        echo "  TOFU=true  Use OpenTofu instead of Terraform"
-        echo ""
-        echo "Examples:"
-        echo "  $0 deploy              # Deploy with Terraform"
-        echo "  TOFU=true $0 deploy    # Deploy with OpenTofu"
         exit 1
         ;;
 esac
