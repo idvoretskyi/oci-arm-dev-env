@@ -1,26 +1,54 @@
 # Repository settings for oci-arm-dev-env
 
 repository:
-  description: "K3d HA Kubernetes cluster on OCI ARM Always Free tier with OpenTofu. VS Code Remote SSH ready."
+  name: oci-arm-dev-env
+  description: "Automated deployment of code-server (VS Code in browser) on OCI ARM Always Free tier using K3d HA Kubernetes cluster. Infrastructure as Code with OpenTofu/Terraform and Helm."
+  homepage: ""
+  topics:
+    - oci
+    - oracle-cloud
+    - arm64
+    - kubernetes
+    - k3d
+    - code-server
+    - vscode
+    - terraform
+    - opentofu
+    - helm
+    - infrastructure-as-code
+    - always-free-tier
+    - developer-environment
   has_issues: true
   has_projects: true
   has_wiki: false
+  has_downloads: true
   default_branch: main
-  # Enable CodeQL code scanning
+  allow_squash_merge: true
+  allow_merge_commit: true
+  allow_rebase_merge: true
+  delete_branch_on_merge: true
+  
+  # Security settings
+  enable_automated_security_fixes: true
+  enable_vulnerability_alerts: true
+  
+  # Code scanning configuration
   code_scanning:
     tools:
       - name: CodeQL
         enabled: true
-        languages: [ 'javascript', 'python', 'shell' ]
+        languages: [ 'python', 'shell' ]
         on:
           push: true
           pull_request: true
+          schedule: weekly
       - name: Trivy
         enabled: true
-        types: [ 'terraform', 'docker', 'kubernetes', 'secrets', 'config' ]
+        types: [ 'terraform', 'docker', 'kubernetes', 'secrets', 'config', 'yaml' ]
         on:
           push: true
           pull_request: true
+  
   # Automatically assign issues and PRs to CODEOWNER
   assignees:
     issues:
@@ -35,15 +63,44 @@ branches:
         required_approving_review_count: 1
         dismiss_stale_reviews: true
         require_code_owner_reviews: true
-      enforce_admins: true
+      enforce_admins: false
       required_status_checks:
         strict: true
         contexts: []
       restrictions: null
+      allow_force_pushes: false
+      allow_deletions: false
 
-# Require all issues and PRs to be assigned to a CODEOWNER
-# (GitHub does not enforce this natively, but this is a best-practice config)
-# Use GitHub Actions or branch protection rules for strict enforcement if needed
+# Labels for issues and PRs
+labels:
+  - name: bug
+    color: d73a4a
+    description: Something isn't working
+  - name: documentation
+    color: 0075ca
+    description: Improvements or additions to documentation
+  - name: enhancement
+    color: a2eeef
+    description: New feature or request
+  - name: infrastructure
+    color: fef2c0
+    description: Infrastructure and deployment related
+  - name: refactoring
+    color: fbca04
+    description: Code refactoring and simplification
+  - name: security
+    color: ee0701
+    description: Security-related issues or improvements
+  - name: terraform
+    color: 5c4ee5
+    description: Terraform/OpenTofu related
+  - name: kubernetes
+    color: 326ce5
+    description: Kubernetes and K3d related
+  - name: help-wanted
+    color: 008672
+    description: Extra attention is needed
 
-# Issue assignment policy (for reference):
-#   - All new issues and PRs should be assigned to @idvoretskyi (see CODEOWNERS)
+# Collaborators and teams (adjust as needed)
+# collaborators: []
+# teams: []

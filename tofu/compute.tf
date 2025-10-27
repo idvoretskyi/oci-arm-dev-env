@@ -1,7 +1,7 @@
 resource "oci_core_instance" "k3d_vm" {
   availability_domain = local.availability_domain
   compartment_id      = var.compartment_id
-  display_name        = "idv-oci-arm-dev-env"
+  display_name        = var.project_name
   shape               = var.instance_shape
 
   shape_config {
@@ -11,14 +11,14 @@ resource "oci_core_instance" "k3d_vm" {
 
   create_vnic_details {
     subnet_id        = oci_core_subnet.k3s_subnet.id
-    display_name     = "idv-oci-arm-dev-env-vnic"
+    display_name     = "${var.project_name}-vnic"
     assign_public_ip = true
-    hostname_label   = "idv-oci-arm-dev-env"
+    hostname_label   = replace(var.project_name, "_", "-")
   }
 
   source_details {
-    source_type = "image"
-    source_id   = local.ubuntu_image_id
+    source_type             = "image"
+    source_id               = local.ubuntu_image_id
     boot_volume_size_in_gbs = var.boot_volume_size_in_gbs
   }
 
@@ -33,8 +33,8 @@ resource "oci_core_instance" "k3d_vm" {
   }
 
   freeform_tags = {
-    "Project" = "oci-arm-dev-env"
-    "Type"    = "k3d-ha-cluster"
+    Project = var.project_name
+    Type    = "k3d-ha-cluster"
   }
 
   timeouts {

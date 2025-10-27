@@ -45,6 +45,7 @@ logs/
 
 # Claude AI files
 CLAUDE.md
+.claude/
 .claude_session
 .claude_history
 claude_*.log

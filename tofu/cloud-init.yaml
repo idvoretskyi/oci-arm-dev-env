@@ -1,14 +1,7 @@
 #cloud-config
 users:
   - name: ${username}
-    groups: sudo
-    shell: /bin/bash
-    sudo: ['ALL=(ALL) NOPASSWD:ALL']
-    lock_passwd: true
-    ssh_authorized_keys:
-      - ${ssh_public_key}
-  - name: ubuntu
-    groups: sudo
+    groups: [sudo, docker]
     shell: /bin/bash
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     lock_passwd: true
@@ -29,40 +22,35 @@ packages:
   - ufw
 
 write_files:
-  - path: /tmp/k3d-ha-setup.sh
+  - path: /tmp/k3d-setup.sh
     permissions: '0755'
     content: |
       #!/bin/bash
-      set -e
-      
-      # Configure firewall
-      ufw allow 22/tcp
-      ufw allow 6443/tcp
-      ufw allow 80/tcp
-      ufw allow 443/tcp
-      ufw allow 8080/tcp
+      set -euo pipefail
+
+      echo "Configuring firewall..."
+      ufw allow 22,80,443,6443,8080/tcp
       ufw --force enable
-      
-      # Add user to docker group
+
+      echo "Setting up Docker..."
+      systemctl enable --now docker
       usermod -aG docker ${username}
-      systemctl enable docker
-      systemctl start docker
-      
-      # Install K3d (latest version)
+
+      echo "Installing K3d..."
       curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
-      
-      # Install kubectl
-      curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/arm64/kubectl"
-      chmod +x kubectl
-      mv kubectl /usr/local/bin/
-      
-      # Install Helm
-      curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-      
-      # Wait for Docker to be ready
+
+      echo "Installing kubectl..."
+      curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/arm64/kubectl"
+      install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+      rm kubectl
+
+      echo "Installing Helm..."
+      curl -s https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+      echo "Waiting for Docker..."
       sleep 10
-      
-      # Create K3d HA cluster
+
+      echo "Creating K3d HA cluster (${k3d_masters} masters + ${k3d_workers} workers)..."
       k3d cluster create k3s-ha-cluster \
         --servers ${k3d_masters} \
         --agents ${k3d_workers} \
@@ -73,21 +61,24 @@ write_files:
         --k3s-arg "--disable=traefik@server:*" \
         --k3s-arg "--disable=servicelb@server:*" \
         --wait
-      
-      # Set up kubeconfig for user
+
+      echo "Configuring kubeconfig for ${username}..."
       mkdir -p /home/${username}/.kube
       k3d kubeconfig get k3s-ha-cluster > /home/${username}/.kube/config
-      chown ${username}:${username} /home/${username}/.kube/config
-      
-      # Install Nginx Ingress Controller
+      chown -R ${username}:${username} /home/${username}/.kube
+
+      echo "Installing Nginx Ingress Controller..."
       kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/cloud/deploy.yaml
-      
-      # Wait for ingress controller
-      kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=300s || true
-      
-      echo "K3d HA cluster setup completed"
+
+      echo "Waiting for ingress controller..."
+      kubectl wait --namespace ingress-nginx \
+        --for=condition=ready pod \
+        --selector=app.kubernetes.io/component=controller \
+        --timeout=300s || echo "Warning: Ingress controller not ready yet"
+
+      echo "K3d HA cluster setup completed successfully!"
 
 runcmd:
-  - /tmp/k3d-ha-setup.sh
+  - /tmp/k3d-setup.sh
 
-final_message: "K3d HA cluster setup completed - ${k3d_masters} masters + ${k3d_workers} workers ready"
+final_message: "K3d HA cluster ready: ${k3d_masters} masters + ${k3d_workers} workers"

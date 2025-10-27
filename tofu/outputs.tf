@@ -21,10 +21,11 @@ output "kubeconfig_command" {
 output "k3d_cluster_info" {
   description = "K3d cluster configuration"
   value = {
+    cluster_name = local.cluster_name
     masters      = var.k3d_masters
     workers      = var.k3d_workers
-    total_nodes  = var.k3d_masters + var.k3d_workers
-    cluster_name = "k3s-ha-cluster"
+    total_nodes  = local.total_nodes
+    info         = local.cluster_info
   }
 }
 
