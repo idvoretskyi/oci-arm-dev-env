@@ -1,29 +1,29 @@
 resource "oci_core_vcn" "k3s_vcn" {
   compartment_id = var.compartment_id
-  display_name   = "k3s-vcn"
-  cidr_block     = "10.0.0.0/16"
-  dns_label      = "k3svcn"
+  display_name   = "${var.project_name}-vcn"
+  cidr_block     = var.vcn_cidr
+  dns_label      = "devenv"
 
   freeform_tags = {
-    "Project" = "k3s-code-server"
+    Project = var.project_name
   }
 }
 
 resource "oci_core_internet_gateway" "k3s_igw" {
   compartment_id = var.compartment_id
   vcn_id         = oci_core_vcn.k3s_vcn.id
-  display_name   = "k3s-igw"
+  display_name   = "${var.project_name}-igw"
   enabled        = true
 
   freeform_tags = {
-    "Project" = "k3s-code-server"
+    Project = var.project_name
   }
 }
 
 resource "oci_core_route_table" "k3s_rt" {
   compartment_id = var.compartment_id
   vcn_id         = oci_core_vcn.k3s_vcn.id
-  display_name   = "k3s-rt"
+  display_name   = "${var.project_name}-rt"
 
   route_rules {
     destination       = "0.0.0.0/0"
@@ -32,29 +32,29 @@ resource "oci_core_route_table" "k3s_rt" {
   }
 
   freeform_tags = {
-    "Project" = "k3s-code-server"
+    Project = var.project_name
   }
 }
 
 resource "oci_core_subnet" "k3s_subnet" {
-  compartment_id      = var.compartment_id
-  vcn_id              = oci_core_vcn.k3s_vcn.id
-  display_name        = "k3s-subnet"
-  cidr_block          = "10.0.1.0/24"
-  dns_label           = "k3ssubnet"
-  route_table_id      = oci_core_route_table.k3s_rt.id
-  security_list_ids   = [oci_core_security_list.k3s_seclist.id]
-  dhcp_options_id     = oci_core_vcn.k3s_vcn.default_dhcp_options_id
+  compartment_id    = var.compartment_id
+  vcn_id            = oci_core_vcn.k3s_vcn.id
+  display_name      = "${var.project_name}-subnet"
+  cidr_block        = var.subnet_cidr
+  dns_label         = "devsubnet"
+  route_table_id    = oci_core_route_table.k3s_rt.id
+  security_list_ids = [oci_core_security_list.k3s_seclist.id]
+  dhcp_options_id   = oci_core_vcn.k3s_vcn.default_dhcp_options_id
 
   freeform_tags = {
-    "Project" = "k3s-code-server"
+    Project = var.project_name
   }
 }
 
 resource "oci_core_security_list" "k3s_seclist" {
   compartment_id = var.compartment_id
   vcn_id         = oci_core_vcn.k3s_vcn.id
-  display_name   = "k3s-seclist"
+  display_name   = "${var.project_name}-seclist"
 
   # Egress rules
   egress_security_rules {
@@ -121,7 +121,7 @@ resource "oci_core_security_list" "k3s_seclist" {
   # K3s node communication
   ingress_security_rules {
     protocol = "6"
-    source   = "10.0.0.0/16"
+    source   = var.vcn_cidr
     tcp_options {
       min = 10250
       max = 10250
@@ -132,7 +132,7 @@ resource "oci_core_security_list" "k3s_seclist" {
   # K3s flannel
   ingress_security_rules {
     protocol = "17"
-    source   = "10.0.0.0/16"
+    source   = var.vcn_cidr
     udp_options {
       min = 8472
       max = 8472
@@ -143,7 +143,7 @@ resource "oci_core_security_list" "k3s_seclist" {
   # K3s metrics
   ingress_security_rules {
     protocol = "6"
-    source   = "10.0.0.0/16"
+    source   = var.vcn_cidr
     tcp_options {
       min = 10254
       max = 10254
@@ -152,6 +152,6 @@ resource "oci_core_security_list" "k3s_seclist" {
   }
 
   freeform_tags = {
-    "Project" = "k3s-code-server"
+    Project = var.project_name
   }
 }

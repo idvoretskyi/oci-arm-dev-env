@@ -1,186 +1,116 @@
 # OCI ARM Development Environment
 
-Deploy a K3d HA Kubernetes cluster on Oracle Cloud Infrastructure ARM instances using the Always Free tier. Perfect for development and testing with VS Code Remote SSH or tunnel.
+Deploy a K3d HA Kubernetes cluster on Oracle Cloud Infrastructure using the Always Free tier.
 
 ## What You Get
 
-- **OCI ARM Instance**: 4 vCPUs, 24GB RAM (Always Free tier max)
-- **K3d HA Cluster**: 3 master + 3 worker nodes in containers
-- **OpenTofu**: Modern infrastructure as code tool
-- **Docker, kubectl, Helm**: Pre-installed development tools
-- **VS Code Ready**: Use Remote SSH or tunnel to connect
+- **OCI ARM Instance**: 4 vCPUs, 24GB RAM (Always Free)
+- **K3d HA Cluster**: 3 master + 3 worker nodes
+- **Development Tools**: Docker, kubectl, Helm, OpenTofu
+- **VS Code Ready**: Remote SSH or tunnel support
 
 ## Quick Start
 
 ```bash
-# Deploy infrastructure
+# Deploy
 ./deploy.sh deploy
 
-# Connect with VS Code
-code --remote ssh-remote+$USER@<instance-ip> /path/to/workspace
+# Connect
+ssh $USER@<instance-ip>
 ```
 
 ## Prerequisites
 
-**OCI Account**: Set up [Always Free tier](https://www.oracle.com/cloud/free/)
-
-**Local Tools** (macOS):
-```bash
-brew install opentofu
-```
-
-**OCI Configuration**: Ensure `~/.oci/config` exists with your credentials
-
-**VS Code** (optional): Install [Remote - SSH extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh)
+- [OCI Always Free account](https://www.oracle.com/cloud/free/)
+- OpenTofu: `brew install opentofu` (macOS)
+- OCI config at `~/.oci/config`
 
 ## Installation
 
-### 1. Clone Repository
-
 ```bash
+# Clone and deploy
 git clone https://github.com/idvoretskyi/oci-arm-dev-env.git
 cd oci-arm-dev-env
-```
-
-### 2. Deploy
-
-```bash
 ./deploy.sh deploy
 ```
 
-This will:
-1. Read OCI config from `~/.oci/config`
-2. Provision OCI infrastructure (VCN, subnet, ARM instance) using OpenTofu
-3. Install Docker, K3d, kubectl, Helm via cloud-init
-4. Create K3d HA cluster (3 masters + 3 workers)
-5. Configure development environment
-
-Wait 10-15 minutes for cloud-init to complete the setup.
-
-### 3. Connect
-
-**Via SSH:**
-```bash
-ssh $USER@<instance-ip>
-```
-
-**Via VS Code Remote SSH:**
-```bash
-code --remote ssh-remote+$USER@<instance-ip> /home/$USER
-```
-
-**Via VS Code Tunnel:**
-```bash
-# On the instance
-code tunnel
-# Follow the prompts to authenticate
-```
+Wait 10-15 minutes for cloud-init to complete cluster setup.
 
 ## Common Commands
 
-### Infrastructure
-
 ```bash
-./deploy.sh deploy       # Full deployment
+# Infrastructure
+./deploy.sh deploy       # Deploy everything
 ./deploy.sh output       # Show connection info
-./deploy.sh destroy      # Destroy everything
+./deploy.sh destroy      # Destroy all resources
+
+# Cluster (on instance)
+kubectl get nodes -o wide
+k3d cluster list
+k3d node create worker --cluster k3s-ha-cluster --role agent
 ```
 
-### Cluster Management
+## VS Code Connection
 
 ```bash
-# SSH to instance
-ssh $USER@<instance-ip>
+# Remote SSH
+code --remote ssh-remote+$USER@<instance-ip> /home/$USER
 
-# View cluster
-kubectl get nodes -o wide                   # View 6 nodes
-kubectl get pods -n kube-system             # System pods
-k3d cluster list                            # K3d clusters
-
-# Scale cluster
-k3d node create worker --cluster k3s-ha-cluster --role agent  # Add worker
-k3d node delete <node-name>                 # Remove node
+# Or use tunnel (on instance)
+code tunnel
 ```
 
 ## Configuration
 
-Edit `tofu/terraform.tfvars` after first deployment:
+Edit `tofu/terraform.tfvars`:
 
 ```hcl
-instance_ocpus          = 4     # vCPUs (Always Free max)
-instance_memory_in_gbs  = 24    # RAM (Always Free max)
-k3d_masters             = 3     # Master nodes (odd for HA)
-k3d_workers             = 3     # Worker nodes
-boot_volume_size_in_gbs = 50    # Storage
+instance_ocpus          = 4     # Max for Always Free
+instance_memory_in_gbs  = 24    # Max for Always Free
+k3d_masters             = 3     # HA masters (odd number)
+k3d_workers             = 3     # HA workers
 ```
 
 ## Troubleshooting
 
-### Check Cluster
-
 ```bash
-# SSH to instance
+# Check cluster status
 ssh $USER@<instance-ip>
-
-# Check K3d
 k3d cluster list
-kubectl get nodes -o wide
+kubectl get nodes
 
-# Check logs
+# View setup logs
 sudo cat /var/log/cloud-init-output.log
-```
 
-### Common Issues
-
-**K3d not ready**: Wait 10-15 minutes after deployment for cluster initialization
-
-**SSH connection refused**: Check if instance is running in OCI console
-
-**VS Code can't connect**: Ensure your SSH key is added:
-```bash
+# Fix SSH connection
 ssh-add ~/.ssh/id_ed25519
 ```
 
 ## Architecture
 
-Single ARM instance with containerized K3d cluster:
-
 ```
 OCI ARM Instance (4 vCPUs, 24GB RAM)
 ├── Docker Engine
 │   └── K3d HA Cluster
-│       ├── 3 Masters (HA control plane with etcd quorum)
+│       ├── 3 Masters (etcd quorum)
 │       └── 3 Workers (workload distribution)
-├── Development Tools (kubectl, Helm, Docker CLI)
-└── Storage (Docker volumes for persistence)
+└── Development Tools
 ```
-
-**Benefits:**
-- HA Kubernetes on single VM (no extra cost)
-- Production-like HA patterns
-- Always Free tier maximized
-- Fast container deployment
-- VS Code Remote SSH/Tunnel ready
 
 ## Cost
 
-**$0/month** - Uses only OCI Always Free tier:
-- 4 OCPUs ARM compute
+**$0/month** - Always Free tier includes:
+- 4 ARM OCPUs
 - 24GB RAM
 - 200GB storage
-- 10TB monthly outbound
+- 10TB outbound transfer
 
 ## Security
 
 - SSH key authentication only
-- Firewall configured (UFW)
-- Security lists limit ports: 22, 80, 443, 6443
-- No password-based authentication
-
-## Documentation
-
-- `ARCHITECTURE.md` - System design
-- `SECURITY.md` - Security practices
+- UFW firewall configured
+- Ports: 22, 80, 443, 6443
+- No password authentication
 
 ## License
 
