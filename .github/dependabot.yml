@@ -1,0 +1,56 @@
+# Dependabot configuration for oci-arm-dev-env
+# Automatically checks for dependency updates and creates pull requests
+
+version: 2
+updates:
+  # Terraform/OpenTofu dependencies
+  - package-ecosystem: "terraform"
+    directory: "/tofu"
+    schedule:
+      interval: "daily"
+      time: "09:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    assignees:
+      - "idvoretskyi"
+    commit-message:
+      prefix: "terraform"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "terraform"
+      - "infrastructure"
+
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "09:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    assignees:
+      - "idvoretskyi"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+  # Docker dependencies (for any Dockerfiles)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "09:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 3
+    assignees:
+      - "idvoretskyi"
+    commit-message:
+      prefix: "docker"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "docker"
