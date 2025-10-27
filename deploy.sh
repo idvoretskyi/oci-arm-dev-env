@@ -9,7 +9,7 @@ NC='\033[0m'
 
 # Configuration
 OCI_CONFIG_FILE="$HOME/.oci/config"
-SSH_KEY_PATH="$HOME/.ssh/id_ed25519.pub"
+SSH_KEY_PATH="$HOME/.ssh/id_rsa.pub"
 TOFU_DIR="./tofu"
 
 print_info() { echo -e "${GREEN}[INFO]${NC} $1"; }

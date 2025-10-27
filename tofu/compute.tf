@@ -1,7 +1,7 @@
 resource "oci_core_instance" "k3d_vm" {
   availability_domain = local.availability_domain
   compartment_id      = var.compartment_id
-  display_name        = "k3d-ha-cluster"
+  display_name        = "idv-oci-arm-dev-env"
   shape               = var.instance_shape
 
   shape_config {
@@ -11,9 +11,9 @@ resource "oci_core_instance" "k3d_vm" {
 
   create_vnic_details {
     subnet_id        = oci_core_subnet.k3s_subnet.id
-    display_name     = "k3d-ha-cluster-vnic"
+    display_name     = "idv-oci-arm-dev-env-vnic"
     assign_public_ip = true
-    hostname_label   = "k3d-ha-cluster"
+    hostname_label   = "idv-oci-arm-dev-env"
   }
 
   source_details {

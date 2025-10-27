@@ -21,9 +21,9 @@ output "kubeconfig_command" {
 output "k3d_cluster_info" {
   description = "K3d cluster configuration"
   value = {
-    masters = var.k3d_masters
-    workers = var.k3d_workers
-    total_nodes = var.k3d_nodes
+    masters      = var.k3d_masters
+    workers      = var.k3d_workers
+    total_nodes  = var.k3d_masters + var.k3d_workers
     cluster_name = "k3s-ha-cluster"
   }
 }
@@ -31,15 +31,6 @@ output "k3d_cluster_info" {
 output "k3d_api_endpoint" {
   description = "K3d API server endpoint"
   value       = "https://${oci_core_instance.k3d_vm.public_ip}:6443"
-}
-
-output "code_server_access" {
-  description = "Code-server access URLs"
-  value = {
-    port_forward = "kubectl port-forward -n code-server svc/code-server-service 8080:8080"
-    local_url = "http://localhost:8080"
-    ingress_url = "http://${oci_core_instance.k3d_vm.public_ip}:8080"
-  }
 }
 
 output "vcn_id" {
