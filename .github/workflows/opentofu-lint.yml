@@ -2,13 +2,13 @@ name: OpenTofu Lint and Validate
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'tofu/**/*.tf'
       - 'tofu/**/*.tfvars'
       - '.github/workflows/opentofu-lint.yml'
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'tofu/**/*.tf'
       - 'tofu/**/*.tfvars'
@@ -23,7 +23,7 @@ jobs:
   tflint:
     name: TFLint with OpenTofu
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

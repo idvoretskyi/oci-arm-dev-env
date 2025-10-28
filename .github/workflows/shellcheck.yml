@@ -2,12 +2,12 @@ name: Shell Script Linting
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - '**.sh'
       - '.github/workflows/shellcheck.yml'
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
       - '**.sh'
       - '.github/workflows/shellcheck.yml'
@@ -21,7 +21,7 @@ jobs:
   shellcheck:
     name: ShellCheck
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -45,7 +45,21 @@ jobs:
         env:
           SHELLCHECK_OPTS: -e SC1091 -e SC2034
 
+      - name: Check if SARIF file has findings
+        id: check_sarif
+        run: |
+          if [ ! -f shellcheck.sarif ]; then
+            echo "has_findings=false" >> $GITHUB_OUTPUT
+          elif [ ! -s shellcheck.sarif ]; then
+            echo "has_findings=false" >> $GITHUB_OUTPUT
+          elif grep -q '"runs":\[\]' shellcheck.sarif || ! grep -q '"results"' shellcheck.sarif; then
+            echo "has_findings=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_findings=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Upload ShellCheck SARIF results
+        if: steps.check_sarif.outputs.has_findings == 'true'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: shellcheck.sarif

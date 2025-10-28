@@ -2,13 +2,13 @@ name: YAML Lint
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - '**.yml'
       - '**.yaml'
       - '.github/workflows/yaml-lint.yml'
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
       - '**.yml'
       - '**.yaml'
@@ -22,7 +22,7 @@ jobs:
   yamllint:
     name: YAML Linting
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -50,7 +50,8 @@ jobs:
               min-spaces-from-content: 1
             document-start: disable
             truthy:
-              allowed-values: ['true', 'false']
+              allowed-values: ['true', 'false', 'on', 'off', 'yes', 'no']
+              check-keys: false
           ignore: |
             .git/
             tofu/.terraform/

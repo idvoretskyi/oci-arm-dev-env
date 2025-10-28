@@ -2,7 +2,9 @@
 
 repository:
   name: oci-arm-dev-env
-  description: "Automated deployment of code-server (VS Code in browser) on OCI ARM Always Free tier using K3d HA Kubernetes cluster. Infrastructure as Code with OpenTofu/Terraform and Helm."
+  description: >-
+    Automated deployment of code-server (VS Code in browser) on OCI ARM Always Free tier
+    using K3d HA Kubernetes cluster. Infrastructure as Code with OpenTofu/Terraform and Helm.
   homepage: ""
   topics:
     - oci
@@ -27,28 +29,28 @@ repository:
   allow_merge_commit: true
   allow_rebase_merge: true
   delete_branch_on_merge: true
-  
+
   # Security settings
   enable_automated_security_fixes: true
   enable_vulnerability_alerts: true
-  
+
   # Code scanning configuration
   code_scanning:
     tools:
       - name: CodeQL
         enabled: true
-        languages: [ 'python', 'shell' ]
+        languages: ['python', 'shell']
         on:
           push: true
           pull_request: true
           schedule: weekly
       - name: Trivy
         enabled: true
-        types: [ 'terraform', 'docker', 'kubernetes', 'secrets', 'config', 'yaml' ]
+        types: ['terraform', 'docker', 'kubernetes', 'secrets', 'config', 'yaml']
         on:
           push: true
           pull_request: true
-  
+
   # Automatically assign issues and PRs to CODEOWNER
   assignees:
     issues:
