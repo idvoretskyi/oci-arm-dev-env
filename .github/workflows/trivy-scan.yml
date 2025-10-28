@@ -2,9 +2,9 @@ name: Trivy Security Scan
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   schedule:
     # Run daily at 09:00 UTC
     - cron: '0 9 * * *'
@@ -19,7 +19,7 @@ jobs:
   trivy-scan:
     name: Trivy Security Scanning
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
