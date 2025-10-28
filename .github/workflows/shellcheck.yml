@@ -45,6 +45,12 @@ jobs:
         env:
           SHELLCHECK_OPTS: -e SC1091 -e SC2034
 
+      - name: Ensure SARIF file exists
+        run: |
+          if [ ! -f shellcheck.sarif ]; then
+            echo '{"version":"2.1.0","runs":[]}' > shellcheck.sarif
+          fi
+
       - name: Upload ShellCheck SARIF results
         uses: github/codeql-action/upload-sarif@v3
         with:
