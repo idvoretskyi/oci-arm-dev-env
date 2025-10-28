@@ -1,3 +1,6 @@
+# TFLint configuration for OpenTofu
+# TFLint is compatible with OpenTofu as it uses the same HCL syntax
+
 plugin "terraform" {
   enabled = true
   preset  = "recommended"
@@ -15,8 +18,8 @@ plugin "google" {
   enabled = false
 }
 
-# OCI provider would go here when available
-# For now, use general Terraform rules
+# OCI provider configuration
+# Using general Terraform/OpenTofu rules as they are compatible
 
 rule "terraform_naming_convention" {
   enabled = true

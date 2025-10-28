@@ -33,7 +33,7 @@ jobs:
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH,MEDIUM'
           scanners: 'vuln,secret,misconfig'
-          # Scan for Terraform, YAML, Kubernetes configs, secrets
+          # Scan for OpenTofu, YAML, Kubernetes configs, secrets
           skip-dirs: '.git'
 
       - name: Upload Trivy results to GitHub Security tab
