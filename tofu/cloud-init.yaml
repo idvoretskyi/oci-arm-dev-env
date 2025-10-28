@@ -1,4 +1,4 @@
-#cloud-config
+# cloud-config
 users:
   - name: ${username}
     groups: [sudo, docker]
