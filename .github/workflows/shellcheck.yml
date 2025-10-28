@@ -44,3 +44,8 @@ jobs:
           format: sarif
         env:
           SHELLCHECK_OPTS: -e SC1091 -e SC2034
+
+      - name: Upload ShellCheck SARIF results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: shellcheck.sarif
