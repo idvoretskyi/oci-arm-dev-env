@@ -1,12 +1,5 @@
-terraform {
-  required_version = ">= 1.0"
-  required_providers {
-    oci = {
-      source  = "oracle/oci"
-      version = "~> 7.23"
-    }
-  }
-}
+# OCI provider configuration
+# The terraform and required_providers blocks are defined in main.tf
 
 provider "oci" {
   tenancy_ocid     = var.tenancy_ocid
