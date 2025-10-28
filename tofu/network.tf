@@ -4,9 +4,7 @@ resource "oci_core_vcn" "k3s_vcn" {
   cidr_block     = var.vcn_cidr
   dns_label      = "devenv"
 
-  freeform_tags = {
-    Project = var.project_name
-  }
+  freeform_tags = local.common_tags
 }
 
 resource "oci_core_internet_gateway" "k3s_igw" {
@@ -15,9 +13,7 @@ resource "oci_core_internet_gateway" "k3s_igw" {
   display_name   = "${var.project_name}-igw"
   enabled        = true
 
-  freeform_tags = {
-    Project = var.project_name
-  }
+  freeform_tags = local.common_tags
 }
 
 resource "oci_core_route_table" "k3s_rt" {
@@ -31,9 +27,7 @@ resource "oci_core_route_table" "k3s_rt" {
     network_entity_id = oci_core_internet_gateway.k3s_igw.id
   }
 
-  freeform_tags = {
-    Project = var.project_name
-  }
+  freeform_tags = local.common_tags
 }
 
 resource "oci_core_subnet" "k3s_subnet" {
@@ -46,9 +40,7 @@ resource "oci_core_subnet" "k3s_subnet" {
   security_list_ids = [oci_core_security_list.k3s_seclist.id]
   dhcp_options_id   = oci_core_vcn.k3s_vcn.default_dhcp_options_id
 
-  freeform_tags = {
-    Project = var.project_name
-  }
+  freeform_tags = local.common_tags
 }
 
 resource "oci_core_security_list" "k3s_seclist" {
@@ -68,8 +60,8 @@ resource "oci_core_security_list" "k3s_seclist" {
     protocol = "6"
     source   = "0.0.0.0/0"
     tcp_options {
-      min = 22
-      max = 22
+      min = local.public_ports.ssh
+      max = local.public_ports.ssh
     }
     description = "SSH access"
   }
@@ -79,8 +71,8 @@ resource "oci_core_security_list" "k3s_seclist" {
     protocol = "6"
     source   = "0.0.0.0/0"
     tcp_options {
-      min = 80
-      max = 80
+      min = local.public_ports.http
+      max = local.public_ports.http
     }
     description = "HTTP access"
   }
@@ -90,8 +82,8 @@ resource "oci_core_security_list" "k3s_seclist" {
     protocol = "6"
     source   = "0.0.0.0/0"
     tcp_options {
-      min = 443
-      max = 443
+      min = local.public_ports.https
+      max = local.public_ports.https
     }
     description = "HTTPS access"
   }
@@ -101,8 +93,8 @@ resource "oci_core_security_list" "k3s_seclist" {
     protocol = "6"
     source   = "0.0.0.0/0"
     tcp_options {
-      min = 6443
-      max = 6443
+      min = local.public_ports.k3s_api
+      max = local.public_ports.k3s_api
     }
     description = "K3s API server"
   }
@@ -112,8 +104,8 @@ resource "oci_core_security_list" "k3s_seclist" {
     protocol = "6"
     source   = "0.0.0.0/0"
     tcp_options {
-      min = 8080
-      max = 8080
+      min = local.public_ports.code_server
+      max = local.public_ports.code_server
     }
     description = "Code-server"
   }
@@ -123,8 +115,8 @@ resource "oci_core_security_list" "k3s_seclist" {
     protocol = "6"
     source   = var.vcn_cidr
     tcp_options {
-      min = 10250
-      max = 10250
+      min = local.internal_ports.kubelet
+      max = local.internal_ports.kubelet
     }
     description = "K3s kubelet"
   }
@@ -134,8 +126,8 @@ resource "oci_core_security_list" "k3s_seclist" {
     protocol = "17"
     source   = var.vcn_cidr
     udp_options {
-      min = 8472
-      max = 8472
+      min = local.internal_ports.flannel
+      max = local.internal_ports.flannel
     }
     description = "K3s flannel VXLAN"
   }
@@ -145,13 +137,11 @@ resource "oci_core_security_list" "k3s_seclist" {
     protocol = "6"
     source   = var.vcn_cidr
     tcp_options {
-      min = 10254
-      max = 10254
+      min = local.internal_ports.metrics
+      max = local.internal_ports.metrics
     }
     description = "K3s metrics"
   }
 
-  freeform_tags = {
-    Project = var.project_name
-  }
+  freeform_tags = local.common_tags
 }

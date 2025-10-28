@@ -32,10 +32,9 @@ resource "oci_core_instance" "k3d_vm" {
     }))
   }
 
-  freeform_tags = {
-    Project = var.project_name
-    Type    = "k3d-ha-cluster"
-  }
+  freeform_tags = merge(local.common_tags, {
+    Type = "k3d-ha-cluster"
+  })
 
   timeouts {
     create = "15m"
