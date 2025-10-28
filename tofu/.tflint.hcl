@@ -6,20 +6,9 @@ plugin "terraform" {
   preset  = "recommended"
 }
 
-plugin "aws" {
-  enabled = false
-}
-
-plugin "azurerm" {
-  enabled = false
-}
-
-plugin "google" {
-  enabled = false
-}
-
 # OCI provider configuration
 # Using general Terraform/OpenTofu rules as they are compatible
+# Only the terraform plugin is loaded (no cloud-specific plugins needed)
 
 rule "terraform_naming_convention" {
   enabled = true
