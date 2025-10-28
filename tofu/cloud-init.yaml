@@ -68,7 +68,8 @@ write_files:
       chown -R ${username}:${username} /home/${username}/.kube
 
       echo "Installing Nginx Ingress Controller..."
-      kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/cloud/deploy.yaml
+      INGRESS_URL="https://raw.githubusercontent.com/kubernetes/ingress-nginx"
+      kubectl apply -f $INGRESS_URL/controller-v1.8.2/deploy/static/provider/cloud/deploy.yaml
 
       echo "Waiting for ingress controller..."
       kubectl wait --namespace ingress-nginx \

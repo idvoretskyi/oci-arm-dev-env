@@ -2,7 +2,9 @@
 
 repository:
   name: oci-arm-dev-env
-  description: "Automated deployment of code-server (VS Code in browser) on OCI ARM Always Free tier using K3d HA Kubernetes cluster. Infrastructure as Code with OpenTofu/Terraform and Helm."
+  description: >-
+    Automated deployment of code-server (VS Code in browser) on OCI ARM Always Free tier
+    using K3d HA Kubernetes cluster. Infrastructure as Code with OpenTofu/Terraform and Helm.
   homepage: ""
   topics:
     - oci
