@@ -1,0 +1,60 @@
+name: Terraform Lint and Validate
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'tofu/**/*.tf'
+      - 'tofu/**/*.tfvars'
+      - '.github/workflows/terraform-lint.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'tofu/**/*.tf'
+      - 'tofu/**/*.tfvars'
+      - '.github/workflows/terraform-lint.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  tflint:
+    name: TFLint
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: latest
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Initialize TFLint
+        run: tflint --init
+        working-directory: tofu
+
+      - name: Run TFLint
+        run: tflint --format=compact --recursive
+        working-directory: tofu
+
+      - name: Terraform fmt check
+        run: terraform fmt -check -recursive
+        working-directory: tofu
+        continue-on-error: true
+
+      - name: Terraform init
+        run: terraform init -backend=false
+        working-directory: tofu
+
+      - name: Terraform validate
+        run: terraform validate
+        working-directory: tofu
