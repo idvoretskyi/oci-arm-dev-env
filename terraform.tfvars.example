@@ -1,0 +1,17 @@
+# Copy this file to terraform.tfvars and fill in your values
+
+tenancy_ocid         = "ocid1.tenancy.oc1..aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+user_ocid            = "ocid1.user.oc1..aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+fingerprint          = "aa:bb:cc:dd:ee:ff:00:11:22:33:44:55:66:77:88:99"
+private_key_path     = "~/.oci/oci_api_key.pem"
+region               = "uk-london-1"
+compartment_id       = "ocid1.tenancy.oc1..aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ssh_public_key_path  = "~/.ssh/id_ed25519.pub"
+vm_username          = "ubuntu"
+
+# Optional overrides (defaults shown)
+instance_ocpus          = 4
+instance_memory_in_gbs  = 24
+boot_volume_size_in_gbs = 50
+k3d_masters             = 3
+k3d_workers             = 3

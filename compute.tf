@@ -1,7 +1,7 @@
-resource "oci_core_instance" "k3d_vm" {
-  availability_domain = local.availability_domain
+resource "oci_core_instance" "main" {
+  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   compartment_id      = var.compartment_id
-  display_name        = var.project_name
+  display_name        = "oci-arm-dev-env"
   shape               = var.instance_shape
 
   shape_config {
@@ -10,33 +10,23 @@ resource "oci_core_instance" "k3d_vm" {
   }
 
   create_vnic_details {
-    subnet_id        = oci_core_subnet.k3s_subnet.id
-    display_name     = "${var.project_name}-vnic"
+    subnet_id        = oci_core_subnet.main.id
     assign_public_ip = true
-    hostname_label   = replace(var.project_name, "_", "-")
   }
 
   source_details {
     source_type             = "image"
-    source_id               = local.ubuntu_image_id
+    source_id               = data.oci_core_images.ubuntu.images[0].id
     boot_volume_size_in_gbs = var.boot_volume_size_in_gbs
   }
 
   metadata = {
-    ssh_authorized_keys = local.ssh_public_key
+    ssh_authorized_keys = file(pathexpand(var.ssh_public_key_path))
     user_data = base64encode(templatefile("${path.module}/cloud-init.yaml", {
       username       = var.vm_username
-      ssh_public_key = local.ssh_public_key
+      ssh_public_key = file(pathexpand(var.ssh_public_key_path))
       k3d_masters    = var.k3d_masters
       k3d_workers    = var.k3d_workers
     }))
-  }
-
-  freeform_tags = merge(local.common_tags, {
-    Type = "k3d-ha-cluster"
-  })
-
-  timeouts {
-    create = "15m"
   }
 }

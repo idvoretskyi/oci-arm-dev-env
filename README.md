@@ -1,117 +1,64 @@
-# OCI ARM Development Environment
+# OCI ARM Dev Environment
 
-Deploy a K3d HA Kubernetes cluster on Oracle Cloud Infrastructure using the Always Free tier.
-
-## What You Get
-
-- **OCI ARM Instance**: 4 vCPUs, 24GB RAM (Always Free)
-- **K3d HA Cluster**: 3 master + 3 worker nodes
-- **Development Tools**: Docker, kubectl, Helm, OpenTofu
-- **VS Code Ready**: Remote SSH or tunnel support
+K3d HA Kubernetes cluster on Oracle Cloud's Always Free tier (4 vCPUs, 24GB RAM, $0/month).
 
 ## Quick Start
 
 ```bash
-# Deploy
-./deploy.sh deploy
+# Install OpenTofu
+brew install opentofu
 
-# Connect
-ssh $USER@<instance-ip>
+# Setup
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your OCI credentials
+
+# Deploy
+./deploy.sh
+
+# Destroy
+./deploy.sh destroy
 ```
 
 ## Prerequisites
 
 - [OCI Always Free account](https://www.oracle.com/cloud/free/)
-- OpenTofu: `brew install opentofu` (macOS)
 - OCI config at `~/.oci/config`
+- SSH key at `~/.ssh/id_ed25519.pub` (or configure in terraform.tfvars)
 
-## Installation
+## What You Get
 
-```bash
-# Clone and deploy
-git clone https://github.com/idvoretskyi/oci-arm-dev-env.git
-cd oci-arm-dev-env
-./deploy.sh deploy
-```
-
-Wait 10-15 minutes for cloud-init to complete cluster setup.
-
-## Common Commands
-
-```bash
-# Infrastructure
-./deploy.sh deploy       # Deploy everything
-./deploy.sh output       # Show connection info
-./deploy.sh destroy      # Destroy all resources
-
-# Cluster (on instance)
-kubectl get nodes -o wide
-k3d cluster list
-k3d node create worker --cluster k3s-ha-cluster --role agent
-```
-
-## VS Code Connection
-
-```bash
-# Remote SSH
-code --remote ssh-remote+$USER@<instance-ip> /home/$USER
-
-# Or use tunnel (on instance)
-code tunnel
-```
+- Single ARM VM: 4 vCPUs, 24GB RAM
+- K3d cluster: 3 masters + 3 workers (HA)
+- Tools: Docker, kubectl, Helm
+- Cost: $0/month
 
 ## Configuration
 
-Edit `tofu/terraform.tfvars`:
+Edit `terraform.tfvars`:
 
 ```hcl
-instance_ocpus          = 4     # Max for Always Free
-instance_memory_in_gbs  = 24    # Max for Always Free
-k3d_masters             = 3     # HA masters (odd number)
-k3d_workers             = 3     # HA workers
+tenancy_ocid        = "ocid1.tenancy..."
+user_ocid           = "ocid1.user..."
+fingerprint         = "aa:bb:cc:..."
+private_key_path    = "~/.oci/oci_api_key.pem"
+region              = "uk-london-1"
+compartment_id      = "ocid1.tenancy..."
+ssh_public_key_path = "~/.ssh/id_ed25519.pub"
+vm_username         = "ubuntu"
 ```
 
-## Troubleshooting
+## Connect
 
 ```bash
-# Check cluster status
-ssh $USER@<instance-ip>
-k3d cluster list
+ssh ubuntu@<instance-ip>
+
+# On the VM
 kubectl get nodes
-
-# View setup logs
-sudo cat /var/log/cloud-init-output.log
-
-# Fix SSH connection
-ssh-add ~/.ssh/id_ed25519
+k3d cluster list
 ```
 
-## Architecture
-
-```
-OCI ARM Instance (4 vCPUs, 24GB RAM)
-├── Docker Engine
-│   └── K3d HA Cluster
-│       ├── 3 Masters (etcd quorum)
-│       └── 3 Workers (workload distribution)
-└── Development Tools
-```
-
-## Cost
-
-**$0/month** - Always Free tier includes:
-- 4 ARM OCPUs
-- 24GB RAM
-- 200GB storage
-- 10TB outbound transfer
-
-## Security
-
-- SSH key authentication only
-- UFW firewall configured
-- Ports: 22, 80, 443, 6443
-- No password authentication
+Wait 5-10 minutes after deployment for cluster setup to complete.
 
 ## License
 
-MIT License - See [LICENSE](LICENSE) file
+MIT
