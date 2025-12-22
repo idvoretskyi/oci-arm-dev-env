@@ -9,8 +9,8 @@ K3d HA Kubernetes cluster on Oracle Cloud's Always Free tier (4 vCPUs, 24GB RAM,
 brew install opentofu
 
 # Setup
-cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars with your OCI credentials
+cp terraform.tfvars.example tofu/terraform.tfvars
+# Edit tofu/terraform.tfvars with your OCI credentials
 
 # Deploy
 ./deploy.sh
@@ -23,7 +23,7 @@ cp terraform.tfvars.example terraform.tfvars
 
 - [OCI Always Free account](https://www.oracle.com/cloud/free/)
 - OCI config at `~/.oci/config`
-- SSH key at `~/.ssh/id_ed25519.pub` (or configure in terraform.tfvars)
+- SSH key at `~/.ssh/id_ed25519.pub` (or configure in tofu/terraform.tfvars)
 
 ## What You Get
 
@@ -34,7 +34,7 @@ cp terraform.tfvars.example terraform.tfvars
 
 ## Configuration
 
-Edit `terraform.tfvars`:
+Edit `tofu/terraform.tfvars`:
 
 ```hcl
 tenancy_ocid        = "ocid1.tenancy..."

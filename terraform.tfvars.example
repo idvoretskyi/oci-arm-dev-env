@@ -1,4 +1,4 @@
-# Copy this file to terraform.tfvars and fill in your values
+# OpenTofu variables - Copy this file to tofu/terraform.tfvars and fill in your values
 
 tenancy_ocid         = "ocid1.tenancy.oc1..aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 user_ocid            = "ocid1.user.oc1..aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"

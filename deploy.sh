@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+cd "$(dirname "$0")/tofu"
+
 case "${1:-deploy}" in
   deploy)
     tofu init
