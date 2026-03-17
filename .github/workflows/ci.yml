@@ -20,7 +20,7 @@ jobs:
 
       # OpenTofu
       - name: Setup OpenTofu
-        uses: opentofu/setup-opentofu@v1
+        uses: opentofu/setup-opentofu@v2
 
       - name: Tofu Format
         run: tofu fmt -check -recursive
